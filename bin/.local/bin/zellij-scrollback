@@ -1,0 +1,15 @@
+#!/bin/bash
+# Lightweight scrollback viewer for Zellij
+# - q to quit (single keystroke)
+# - v to visual select, y to yank to clipboard and auto-exit
+# - all vim motions for navigation (j/k/gg/G/Ctrl-d/Ctrl-u//)
+nvim -u NONE -n \
+  -c "set noswapfile nobackup nowritebackup" \
+  -c "set nomodified nomodifiable" \
+  -c "set number relativenumber scrolloff=5" \
+  -c "set ignorecase smartcase incsearch hlsearch" \
+  -c "syntax off" \
+  -c "nnoremap q :qa!<CR>" \
+  -c 'vnoremap y "ay:call system("pbcopy", @a)<CR>:qa!<CR>' \
+  -c "normal G" \
+  "$1"

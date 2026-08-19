@@ -1,0 +1,6 @@
+--ignore=^\.git$
+--ignore=^\.gitignore$
+--ignore=^\.stowrc$
+--ignore=^README\.md$
+--ignore=^Brewfile$
+--ignore=^\.DS_Store$

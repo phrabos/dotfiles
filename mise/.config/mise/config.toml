@@ -1,0 +1,9 @@
+[settings]
+idiomatic_version_file_enable_tools = ["node"]
+
+[settings.node]
+corepack = true
+
+[tools]
+node = "24"
+"npm:@microsoft/inshellisense" = "latest"

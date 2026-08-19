@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+._*
+
+# Credential patterns — a backstop, not the primary defence
+*hosts.yml
+*credentials*
+*.key
+*.pem
+.env
+.env.*
+
+# Per-machine record of approved worktrunk project hooks. Untracked so a fresh
+# clone prompts instead of running them silently.
+approvals.toml
+approvals.toml.lock
+
+# Lock and session files
+*.lock

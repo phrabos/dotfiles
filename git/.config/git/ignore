@@ -1,0 +1,25 @@
+# Global gitignore — machine and editor artifacts only.
+# Picked up automatically via XDG; no core.excludesfile setting needed.
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon?
+
+# ── Editor / IDE scratch ─────────────────────────────────────────────────────
+*.swp
+*.swo
+*~
+.netrwhist
+tags
+.idea/
+.vscode/
+*.sublime-workspace
+
+# ── Claude Code ──────────────────────────────────────────────────────────────
+**/.claude/settings.local.json

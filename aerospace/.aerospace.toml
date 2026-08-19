@@ -1,0 +1,217 @@
+# AeroSpace config - i3-style tiling for macOS
+# Alt is the main modifier (doesn't conflict with Cmd shortcuts)
+
+# Start AeroSpace at login
+start-at-login = true
+
+# Normalizations
+enable-normalization-flatten-containers = false
+enable-normalization-opposite-orientation-for-nested-containers = false
+
+# Mouse follows focus
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+on-focus-changed = ['move-mouse window-lazy-center']
+
+# Pin workspaces to monitors
+[workspace-to-monitor-force-assignment]
+1 = 'ASUS VG289Q1A'
+2 = 'ASUS VG289Q1A'
+3 = 'Built-in Retina Display'   # exercise station - TPVirtual (can't be moved once open)
+4 = 'Built-in Retina Display'   # exercise station - BikeControl
+5 = 'HP VH240a'
+6 = 'ASUS VG289Q1A'      # dev tools - Postman, pgAdmin, Docker
+7 = 'ASUS VG289Q1A'      # blackhole - stash slot, no app rules (see alt-m)
+8 = 'HP VH240a'
+9 = 'HP VH240a'
+0 = 'Built-in Retina Display'
+tv = 'Beyond TV'         # ride-along - park browser/ghostty here (see alt-y)
+
+# Gaps
+[gaps]
+inner.horizontal = 8
+inner.vertical = 8
+outer.left = 8
+outer.right = 8
+outer.bottom = 8
+outer.top = 8
+
+# Main keybindings - Alt is the mod key
+[mode.main.binding]
+
+# Focus (vim keys)
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+# Move windows (Alt+Shift+vim keys)
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+# Split orientation
+alt-v = 'split horizontal'
+alt-s = 'split vertical'
+
+# Layout controls
+alt-f = 'fullscreen'
+alt-shift-space = 'layout floating tiling'
+
+# Layout
+alt-t = 'layout tiles horizontal vertical'
+alt-a = 'layout accordion horizontal vertical'
+
+# Resize mode
+alt-r = 'mode resize'
+
+# Close window
+alt-shift-q = 'close'
+
+# Blackhole - stash focused window on 7, focus stays put (use instead of Cmd-M)
+alt-m = 'move-node-to-workspace 7'
+# Same, but follow the window over
+alt-shift-m = ['move-node-to-workspace 7', 'workspace 7']
+# Balance all windows equally
+alt-shift-b = 'balance-sizes'
+
+# Workspaces (Alt+number to switch)
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+alt-4 = 'workspace 4'
+alt-5 = 'workspace 5'
+alt-6 = 'workspace 6'
+alt-7 = 'workspace 7'
+alt-8 = 'workspace 8'
+alt-9 = 'workspace 9'
+alt-0 = 'workspace 0'
+
+# TV workspace - lives on Beyond TV, for reading while riding
+alt-y = 'workspace tv'
+
+# Move window to workspace (Alt+Shift+number)
+alt-shift-1 = 'move-node-to-workspace 1'
+alt-shift-2 = 'move-node-to-workspace 2'
+alt-shift-3 = 'move-node-to-workspace 3'
+alt-shift-4 = 'move-node-to-workspace 4'
+alt-shift-5 = 'move-node-to-workspace 5'
+alt-shift-6 = 'move-node-to-workspace 6'
+alt-shift-7 = 'move-node-to-workspace 7'
+alt-shift-8 = 'move-node-to-workspace 8'
+alt-shift-9 = 'move-node-to-workspace 9'
+alt-shift-0 = 'move-node-to-workspace 0'
+
+# Throw focused window onto the TV and follow it
+alt-shift-y = ['move-node-to-workspace tv', 'workspace tv']
+
+# Switch to last workspace
+alt-tab = 'workspace-back-and-forth'
+
+# Move workspace to different monitor
+alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# Move window to next/prev monitor
+alt-shift-n = ['move-node-to-monitor --wrap-around next', 'focus-monitor --wrap-around next']
+alt-shift-p = ['move-node-to-monitor --wrap-around prev', 'focus-monitor --wrap-around prev']
+
+# Reload config directly
+alt-shift-r = 'reload-config'
+
+# Service mode (for reload, etc)
+alt-shift-semicolon = 'mode service'
+
+# Resize mode (Alt+r to enter, Alt+r to exit)
+[mode.resize.binding]
+alt-r = 'mode main'
+h = 'resize width -50'
+j = 'resize height +50'
+k = 'resize height -50'
+l = 'resize width +50'
+shift-h = 'resize width -200'
+shift-j = 'resize height +200'
+shift-k = 'resize height -200'
+shift-l = 'resize width +200'
+enter = 'mode main'
+esc = 'mode main'
+
+# Service mode (config reload, etc)
+[mode.service.binding]
+r = ['reload-config', 'mode main']
+esc = 'mode main'
+enter = 'mode main'
+
+# Assign apps to workspaces
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 1'
+
+# All browsers share workspace 2 in accordion layout
+[[on-window-detected]]
+if.app-id = 'app.zen-browser.zen'
+run = ['move-node-to-workspace 2', 'layout accordion']
+
+[[on-window-detected]]
+if.app-id = 'org.mozilla.firefox'
+run = ['move-node-to-workspace 2', 'layout accordion']
+
+[[on-window-detected]]
+if.app-id = 'com.brave.Browser'
+run = ['move-node-to-workspace 2', 'layout accordion']
+
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+run = ['move-node-to-workspace 2', 'layout accordion']
+
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = 'move-node-to-workspace 8'
+
+[[on-window-detected]]
+if.app-id = 'md.obsidian'
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'com.anthropic.claudefordesktop'
+run = 'move-node-to-workspace 9'
+
+[[on-window-detected]]
+if.app-id = 'io.zsa.keymapp'
+run = 'move-node-to-workspace 0'
+
+[[on-window-detected]]
+if.app-id = 'io.zsa.navigator'
+run = 'move-node-to-workspace 0'
+
+# Dev tools - workspace 6
+[[on-window-detected]]
+if.app-id = 'com.postmanlabs.mac'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'org.pgadmin.pgadmin4'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.docker.docker'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = 'layout floating'
+
+# Exercise station - MacBook screen. These apps can't be moved after launch, so
+# they have to land on the right display the first time.
+[[on-window-detected]]
+if.app-id = 'com.indieVelo.launcher'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'com.indievelo.client'
+run = 'move-node-to-workspace 3'
+
+# BikeControl (SwiftControl) goes to workspace 4
+[[on-window-detected]]
+if.app-id = 'de.jonasbark.swiftcontrol.darwin'
+run = 'move-node-to-workspace 4'
+

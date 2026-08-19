@@ -1,0 +1,64 @@
+# Identity lives in ~/.gitconfig.local (untracked). See README.
+[include]
+	path = ~/.gitconfig.local
+
+[init]
+	defaultBranch = main
+
+[core]
+	editor = nvim
+	# ~/.config/git/ignore is picked up via XDG — no excludesfile needed
+
+[pull]
+	# Rebase instead of merge, so `git pull` never makes a merge commit.
+	rebase = true
+
+[push]
+	# New branches push without --set-upstream.
+	autoSetupRemote = true
+
+[fetch]
+	# Drop local refs for branches deleted on the remote.
+	prune = true
+	pruneTags = true
+
+[rerere]
+	# REuse REcorded REsolution: replays past conflict resolutions.
+	enabled = true
+	autoUpdate = true
+
+[diff]
+	# Histogram reads better than the default Myers, especially for moved code.
+	algorithm = histogram
+	colorMoved = zebra
+	# Detect copies as well as renames.
+	renames = copies
+
+[merge]
+	# Show the common ancestor alongside both sides of a conflict.
+	conflictstyle = zdiff3
+
+[rebase]
+	autoStash = true
+	updateRefs = true
+
+[branch]
+	# Most recently committed branches first.
+	sort = -committerdate
+
+[tag]
+	sort = -version:refname
+
+[column]
+	ui = auto
+
+[commit]
+	# Full diff in the commit message editor.
+	verbose = true
+
+[log]
+	date = iso
+
+[status]
+	showUntrackedFiles = all
+	submoduleSummary = true

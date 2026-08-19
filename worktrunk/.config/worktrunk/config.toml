@@ -1,0 +1,34 @@
+# worktrunk — git worktree manager
+
+# Relative to the repo root, so each worktree lands beside the current one:
+# container/main, container/feature-x, …
+worktree-path = "../{{ branch | sanitize }}"
+
+[commit.generation]
+command = "MAX_THINKING_TOKENS=0 claude -p --no-session-persistence --model=haiku --tools='' --disable-slash-commands --setting-sources='' --system-prompt=''"
+
+[list]
+full = false
+branches = true
+# Pinned — a future release changes the default.
+json-schema = 2
+
+[merge]
+squash = true
+commit = true
+rebase = true
+remove = true
+verify = true
+
+[aliases]
+claude = "claude"
+
+# Open a Zellij tab (see ~/.config/zellij/layouts/wt-orchestrator.kdl) on
+# `wt switch --create`. Guarded on $ZELLIJ so it no-ops outside Zellij; `|| true`
+# so a Zellij failure never blocks worktree creation.
+[pre-start]
+zellij-tab = """
+if [ -n "$ZELLIJ" ]; then
+  zellij action new-tab --name "{{ branch | sanitize }}" --cwd "{{ worktree_path }}" --layout wt-orchestrator || true
+fi
+"""

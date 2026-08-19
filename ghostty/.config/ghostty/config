@@ -1,0 +1,30 @@
+# Window state
+window-save-state = always
+# `true` is a legacy alias for `auto`; enum values are auto|client|server|none.
+window-decoration = auto
+
+# Disable terminal bell
+bell-features = false
+
+# Opacity and blur
+background-opacity = 0.8
+background-blur-radius = 10
+
+# Font
+font-family = "IosevkaTerm Nerd Font Mono"
+font-size = 14
+
+# Built-in theme, matches nvim/zellij/lazygit/btop. `ghostty +list-themes`.
+theme = "Catppuccin Mocha"
+
+# macOS settings
+macos-option-as-alt = true
+
+# Draw Ghostty's tabs in the titlebar instead of a second row below it.
+macos-titlebar-style = tabs
+
+# Pass super+alt arrows through to Zellij instead of Ghostty's split navigation.
+keybind = super+alt+left=unbind
+keybind = super+alt+right=unbind
+keybind = super+alt+up=unbind
+keybind = super+alt+down=unbind

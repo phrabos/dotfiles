@@ -1,0 +1,13 @@
+# Load order matters: zsh-syntax-highlighting wraps ZLE widgets, so it goes last.
+
+# Extra completions (fpath only, defines no widgets)
+zsh-users/zsh-completions kind:fpath path:src
+
+# Utilities
+ohmyzsh/ohmyzsh path:plugins/colored-man-pages
+
+# Suggestions
+zsh-users/zsh-autosuggestions
+
+# Must be last
+zsh-users/zsh-syntax-highlighting

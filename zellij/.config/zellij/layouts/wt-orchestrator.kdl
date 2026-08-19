@@ -1,0 +1,19 @@
+// Tab layout opened by the worktrunk pre-start hook for each new worktree.
+// Left pane: shell for editing / git. Right pane: Claude Code.
+//
+// tab-bar and status-bar are listed explicitly because `zellij action new-tab
+// --layout` ignores default_tab_template; without them the tab has no bars.
+layout {
+    pane size=1 borderless=true {
+        plugin location="zellij:tab-bar"
+    }
+    pane split_direction="vertical" {
+        pane name="monitor"
+        pane name="autopilot" command="claude" {
+            args "--dangerously-skip-permissions"
+        }
+    }
+    pane size=1 borderless=true {
+        plugin location="zellij:status-bar"
+    }
+}
