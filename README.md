@@ -61,7 +61,7 @@ cd ~/dotfiles
 mkdir -p ~/.config/kali-shell-defaults.bak
 mv ~/.zshrc ~/.zprofile ~/.config/kali-shell-defaults.bak/ 2>/dev/null
 
-stow $(ls -d */ | grep -v '^zsh-macos/' | grep -v '^aerospace/')
+stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace)/')
 
 # Antidote is not packaged in Debian.
 git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
@@ -97,9 +97,13 @@ stow -R <package>   # restow, after renaming files
 stow -n -v <pkg>    # dry run, shows every link without making one
 
 # link all — note the platform exclusion, see "Platform split" above
-stow $(ls -d */ | grep -v '^zsh-linux/')   # macOS
-stow $(ls -d */ | grep -v '^zsh-macos/')   # Linux
+stow $(ls -d */ | grep -v '^zsh-linux/')                        # macOS
+stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace)/')           # Linux
 ```
+
+Use `$(...)` and not a shell variable: zsh does not word-split unquoted
+parameter expansions, so `PKGS=$(...); stow $PKGS` passes the whole list to
+stow as a single package name and fails. Command substitution does split.
 
 Stow refuses to overwrite a real file. If it errors, move the existing file
 into the matching package here first, then stow.
