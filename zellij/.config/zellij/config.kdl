@@ -292,7 +292,7 @@ theme "catppuccin-mocha"
 //
 // Must be a literal absolute path: zellij 0.44 expands neither ~ nor $HOME, and
 // silently ignores the setting if you use either. Edit this for your machine.
-default_cwd "/Users/phrabos/projects"
+default_cwd "/home/phrabos/Projects"
 
 // Toggle enabling the mouse mode.
 // On certain configurations, or terminals this could

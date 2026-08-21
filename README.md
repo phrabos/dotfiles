@@ -11,6 +11,22 @@ dotfiles/nvim/.config/nvim/      ->  ~/.config/nvim/
 The files in `$HOME` are **symlinks into this repo**, so editing `~/.zshrc`
 edits `zsh/.zshrc` here. One file, two paths — no sync step, no drift.
 
+## Platform split
+
+`zsh` is split across three packages, because the shell config genuinely
+diverges and neither side should carry the other's dead branches:
+
+| Package | Contents | Stow on |
+|---|---|---|
+| `zsh` | `.zshenv` `.zsh_plugins.txt` `.config/zsh/` | both |
+| `zsh-macos` | `.zshrc` `.zprofile` (Homebrew, `/opt/homebrew` paths) | macOS |
+| `zsh-linux` | `.zshrc` `.zprofile` (apt, `~/.antidote`, no Homebrew) | Linux |
+
+Each `.zshrc` is standalone — no `$OSTYPE` checks, no guarded no-ops.
+
+**This means `stow */` no longer works**: it would try to link both `.zshrc`
+files onto the same target. Use the platform command below.
+
 ## Bootstrap a new Mac
 
 ```bash
@@ -21,7 +37,7 @@ git clone git@github.com:phrabos/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
 brew bundle --file=./Brewfile     # 3 taps, 43 formulae, 26 casks
-stow */                           # symlink everything
+stow $(ls -d */ | grep -v '^zsh-linux/')
 
 # Third-party taps require explicit trust before Homebrew will load them
 brew trust --cask nikitabobko/tap/aerospace
@@ -29,6 +45,41 @@ brew trust --cask docker/tap/sbx
 brew trust --formula dotenvx/brew/dotenvx
 
 mise install                      # node versions from mise/.config/mise/config.toml
+```
+
+## Bootstrap a new Linux box (Debian / Kali)
+
+The Brewfile does not apply. Homebrew is not used on Linux; everything comes
+from apt, a vendor apt repo, or a release binary dropped in `~/.local/bin`.
+
+```bash
+git clone git@github.com:phrabos/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+
+# Kali ships its own ~/.zshrc and ~/.zprofile as real files. Stow refuses to
+# overwrite them, so move them aside first.
+mkdir -p ~/.config/kali-shell-defaults.bak
+mv ~/.zshrc ~/.zprofile ~/.config/kali-shell-defaults.bak/ 2>/dev/null
+
+stow $(ls -d */ | grep -v '^zsh-macos/' | grep -v '^aerospace/')
+
+# Antidote is not packaged in Debian.
+git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
+```
+
+`aerospace` is a macOS window manager; skip it. See [LINUX.md](LINUX.md) for the
+package-by-package translation of the Brewfile and the tools that need a
+vendor repo or release binary.
+
+### Debian binary name shims
+
+Debian renames two binaries to avoid clashes with unrelated packages. The
+configs here call them by their upstream names, so `~/.local/bin` carries
+shims (this is why `.zprofile` puts it ahead of `/usr/bin`):
+
+```bash
+ln -sf "$(command -v batcat)" ~/.local/bin/bat
+ln -sf "$(command -v fdfind)" ~/.local/bin/fd
 ```
 
 Regenerate the Brewfile after installing or removing anything:
@@ -41,10 +92,13 @@ brew bundle dump --force --file=./Brewfile
 
 ```bash
 stow <package>      # link one package
-stow */             # link all
 stow -D <package>   # UNlink (repo untouched — fully reversible)
 stow -R <package>   # restow, after renaming files
-stow -n -v */       # dry run, shows every link without making one
+stow -n -v <pkg>    # dry run, shows every link without making one
+
+# link all — note the platform exclusion, see "Platform split" above
+stow $(ls -d */ | grep -v '^zsh-linux/')   # macOS
+stow $(ls -d */ | grep -v '^zsh-macos/')   # Linux
 ```
 
 Stow refuses to overwrite a real file. If it errors, move the existing file
@@ -54,7 +108,9 @@ into the matching package here first, then stow.
 
 | Package | Links to |
 |---|---|
-| `zsh` | `.zshrc` `.zprofile` `.zshenv` `.zsh_plugins.txt` |
+| `zsh` | `.zshenv` `.zsh_plugins.txt`, `.config/zsh/` |
+| `zsh-macos` | `.zshrc` `.zprofile` (macOS only) |
+| `zsh-linux` | `.zshrc` `.zprofile` (Linux only) |
 | `git` | `.gitconfig`, `.config/git/ignore` |
 | `aerospace` | `.aerospace.toml` |
 | `nvim` | `.config/nvim/` (LazyVim) |
@@ -92,10 +148,16 @@ machine after cloning:
   EOF
   ```
 
-- **Zellij `default_cwd`** — hardcoded to `/Users/phrabos/projects` in
-  `zellij/.config/zellij/config.kdl`. Zellij 0.44 expands neither `~` nor
-  `$HOME` and silently ignores the setting if you use either, so a literal
-  absolute path is the only form that works. Edit it for your machine.
+- **Zellij `default_cwd`** — a literal absolute path in
+  `zellij/.config/zellij/config.kdl`, currently `/home/phrabos/Projects`.
+  Zellij 0.44 expands neither `~` nor `$HOME` and silently ignores the setting
+  if you use either, so a literal path is the only form that works. This is the
+  one line in the repo that cannot be shared between machines — edit it after
+  cloning. On macOS it is `/Users/phrabos/projects`.
+
+  Note the capital `P` on Linux: ext4 is case-sensitive and Kali registers
+  `~/Projects` as `XDG_PROJECTS_DIR`, so the lowercase macOS spelling will not
+  resolve here.
 
 AeroSpace's `workspace-to-monitor-force-assignment` also names specific
 displays; adjust or delete those lines for your setup.
