@@ -23,6 +23,11 @@ macos-option-as-alt = true
 # Draw Ghostty's tabs in the titlebar instead of a second row below it.
 macos-titlebar-style = tabs
 
+# Shift+Enter inserts a newline instead of submitting. Ghostty otherwise emits
+# `\x1b[27;2;13~`, which Claude Code and most REPLs read as a plain Enter.
+# `/terminal-setup` configures iTerm2 and VS Code but not Ghostty.
+keybind = shift+enter=text:\n
+
 # Pass super+alt arrows through to Zellij instead of Ghostty's split navigation.
 keybind = super+alt+left=unbind
 keybind = super+alt+right=unbind

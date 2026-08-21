@@ -180,6 +180,36 @@ uv tool install pytest
 uv tool install pre-commit
 ```
 
+## GUI apps (casks)
+
+**Brave** — official apt repo, deb822 format. Publishes a single `stable`
+suite, so Kali's codename is irrelevant.
+
+```bash
+sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
+  https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
+  https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
+sudo apt update && sudo apt install brave-browser
+```
+
+**Google Chrome** — the `.deb` installs its own apt source, so it updates
+through apt afterwards.
+
+```bash
+curl -fsSLO https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install -y ./google-chrome-stable_current_amd64.deb
+```
+
+Chrome's `Depends` list names pre-t64 packages (`libasound2`, `libgtk-3-0`,
+`libglib2.0-0`…). They look missing to `dpkg-query` on a modern Debian, but the
+`*t64` packages satisfy them via `Provides` — check with
+`apt-get install --no-act`, not by hand.
+
+Still to do: Discord, Slack, Obsidian, Docker, gcloud, ProtonVPN, Proton Mail
+Bridge, Tailscale, pgAdmin4, GnuCash, Zen, keymapp. Firefox and Wireshark
+already ship with Kali.
+
 ## Dropped — macOS only
 
 | Brewfile entry | Why |
@@ -190,9 +220,7 @@ uv tool install pre-commit
 | `claude` (cask) | no official Linux desktop app |
 | `font-iosevka-*` casks | replaced by the Nerd Fonts release tarballs above |
 
-Most other casks have Linux equivalents (Brave, Chrome, Firefox, Discord,
-Slack, Obsidian, Docker, gcloud, ProtonVPN, Proton Mail Bridge, Tailscale,
-pgAdmin4, GnuCash, Wireshark) — each its own apt repo or `.deb`. Not yet done.
+Everything else has a Linux equivalent — see the GUI apps section above.
 
 ## Still manual
 
