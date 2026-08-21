@@ -206,9 +206,75 @@ Chrome's `Depends` list names pre-t64 packages (`libasound2`, `libgtk-3-0`,
 `*t64` packages satisfy them via `Provides` — check with
 `apt-get install --no-act`, not by hand.
 
-Still to do: Discord, Slack, Obsidian, Docker, gcloud, ProtonVPN, Proton Mail
-Bridge, Tailscale, pgAdmin4, GnuCash, Zen, keymapp. Firefox and Wireshark
-already ship with Kali.
+**Discord** — direct `.deb`. The package is only ~2 MB and that is correct: it
+ships an `updater_bootstrap` that fetches the app on first run.
+
+```bash
+curl -fsSL -o discord.deb "https://discord.com/api/download?platform=linux&format=deb"
+sudo apt install -y ./discord.deb
+```
+
+**Obsidian** — `.deb` from GitHub releases (`obsidianmd/obsidian-releases`).
+
+**Tailscale** — publishes a real `sid` suite, an exact match for Kali. No
+codename guessing.
+
+```bash
+sudo curl -fsSL https://pkgs.tailscale.com/stable/debian/sid.noarmor.gpg \
+  -o /usr/share/keyrings/tailscale-archive-keyring.gpg
+sudo curl -fsSL https://pkgs.tailscale.com/stable/debian/sid.tailscale-keyring.list \
+  -o /etc/apt/sources.list.d/tailscale.list
+sudo apt update && sudo apt install tailscale
+```
+
+**Docker Engine** — Docker publishes only `bookworm` and `trixie` for Debian;
+there is no `sid` or `forky`. Use `trixie`. Docker Desktop is not used here —
+Engine plus the compose and buildx plugins is what sbx needs.
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian trixie stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker "$USER"   # takes effect on next login
+```
+
+**Docker Sandboxes (sbx)** — needs KVM hardware virtualisation and `e2fsprogs`.
+`docker-sbx` is in Docker's *Ubuntu* repo but **not** the Debian one, and the
+`.deb` assets are Ubuntu-built, so take the distro-agnostic tarball. Install to
+`/usr/local` rather than the default `~/.docker/sbx`: AppArmor is active on
+Kali, and the bundled `install.sh` needs root to register its profile.
+
+```bash
+curl -fsSLO https://github.com/docker/sbx-releases/releases/download/v0.39.0/DockerSandboxes-linux-amd64.tar.gz
+tar -xzf DockerSandboxes-linux-amd64.tar.gz
+sudo env PREFIX=/usr/local bash docker-sbx/install.sh
+```
+
+**ProtonVPN** — Proton's repo is broken on Kali. Its `python3-proton-core`
+0.7.4 depends on `python3-importlib-metadata`, which Debian removed because
+`importlib.metadata` has been stdlib since Python 3.8 (Kali ships 3.13). The
+entire Proton chain is uninstallable from Proton's repo alone.
+
+Kali packages its own `python3-proton-core` 0.7.0-1 without that dependency.
+Pin to it, then hold — otherwise apt "upgrades" into Proton's broken 0.7.4.
+
+```bash
+curl -fsSLO https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.8_all.deb
+sudo apt install -y ./protonvpn-stable-release_1.0.8_all.deb
+sudo apt update
+sudo apt install -y proton-vpn-gnome-desktop python3-proton-core=0.7.0-1
+sudo apt-mark hold python3-proton-core
+```
+
+Verify the hold with `dpkg --get-selections | grep proton-core` — `apt-mark
+showhold` prints nothing on this apt version even when the hold is set.
+
+Still to do: Slack, gcloud, Proton Mail Bridge, pgAdmin4, GnuCash, Zen,
+keymapp. Firefox and Wireshark already ship with Kali.
 
 ## Dropped — macOS only
 
