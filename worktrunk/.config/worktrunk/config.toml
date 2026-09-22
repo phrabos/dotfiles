@@ -22,13 +22,3 @@ verify = true
 
 [aliases]
 claude = "claude"
-
-# Open a Zellij tab (see ~/.config/zellij/layouts/wt-orchestrator.kdl) on
-# `wt switch --create`. Guarded on $ZELLIJ so it no-ops outside Zellij; `|| true`
-# so a Zellij failure never blocks worktree creation.
-[pre-start]
-zellij-tab = """
-if [ -n "$ZELLIJ" ]; then
-  zellij action new-tab --name "{{ branch | sanitize }}" --cwd "{{ worktree_path }}" --layout wt-orchestrator || true
-fi
-"""

@@ -10,6 +10,6 @@ nvim -u NONE -n \
   -c "set ignorecase smartcase incsearch hlsearch" \
   -c "syntax off" \
   -c "nnoremap q :qa!<CR>" \
-  -c 'vnoremap y "ay:call system("pbcopy", @a)<CR>:qa!<CR>' \
+  -c 'vnoremap y "ay:call system("clipcopy", @a)<CR>:qa!<CR>' \
   -c "normal G" \
   "$1"

@@ -1,0 +1,12 @@
+#!/bin/sh
+# Copy stdin to the system clipboard on Linux (Wayland/X11) or macOS.
+# Falls back to OSC 52, which Ghostty and Zellij both pass through.
+if [ -n "$WAYLAND_DISPLAY" ] && command -v wl-copy >/dev/null 2>&1; then
+  exec wl-copy
+elif command -v pbcopy >/dev/null 2>&1; then
+  exec pbcopy
+elif [ -n "$DISPLAY" ] && command -v xclip >/dev/null 2>&1; then
+  exec xclip -selection clipboard
+else
+  printf '\033]52;c;%s\a' "$(base64 | tr -d '\n')" >/dev/tty
+fi

@@ -1,20 +1,10 @@
-// Zellij config — vim-friendly keybindings, Ctrl+p kept for pane mode.
-
-ui {
-    pane_frames {
-        hide_session_name false
-    }
-}
+// Zellij config: vim-style mode keys, compact bar, Catppuccin Mocha.
+//
+// Alt is also the window-manager modifier (Hyprland on Linux, AeroSpace on
+// macOS), and those grab Alt+a/d/f/h/j/k/l/m/r/s/t/v/[/]/0-9/Tab before Zellij
+// sees them. Only bind Alt keys here that are free on both machines.
 
 keybinds clear-defaults=true {
-    normal {
-        // unbind "Ctrl p"  // Keep Ctrl+p for pane mode
-        unbind "Ctrl o"
-        // unbind "Ctrl q"  // Re-enabled for quit
-        unbind "Ctrl h"
-        // uncomment this and adjust key if using copy_on_select=false
-        // bind "Alt c" { Copy; }
-    }
     locked {
         bind "Ctrl g" { SwitchToMode "Normal"; }
     }
@@ -38,18 +28,26 @@ keybinds clear-defaults=true {
         bind "j" "Down" { MoveFocus "Down"; SwitchToMode "Normal"; }
         bind "k" "Up" { MoveFocus "Up"; SwitchToMode "Normal"; }
         bind "p" { SwitchFocus; SwitchToMode "Normal"; }
+        bind ";" { FocusLastPane; SwitchToMode "Normal"; }
         bind "n" { NewPane; SwitchToMode "Normal"; }
         bind "d" { NewPane "Down"; SwitchToMode "Normal"; }
         bind "r" { NewPane "Right"; SwitchToMode "Normal"; }
+        bind "s" { NewPane "stacked"; SwitchToMode "Normal"; }
         bind "x" { CloseFocus; SwitchToMode "Normal"; }
         bind "z" { ToggleFocusFullscreen; SwitchToMode "Normal"; }
+        bind "Shift f" { ToggleFocusNoUiFullscreen; SwitchToMode "Normal"; }
         bind "f" { TogglePaneFrames; SwitchToMode "Normal"; }
         bind "w" { ToggleFloatingPanes; SwitchToMode "Normal"; }
         bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "Normal"; }
-        bind "c" { SwitchToMode "RenamePane"; PaneNameInput 0;}
+        bind "i" { TogglePanePinned; SwitchToMode "Normal"; }
+        bind "c" { SwitchToMode "RenamePane"; PaneNameInput 0; }
+        // Move mode lives here because Alt m belongs to the window manager.
+        bind "m" { SwitchToMode "Move"; }
+        // Swap layouts; stays in pane mode so repeated presses keep cycling.
+        bind "[" { PreviousSwapLayout; }
+        bind "]" { NextSwapLayout; }
     }
     move {
-        bind "Alt m" { SwitchToMode "Normal"; }
         bind "n" "Tab" { MovePane; }
         bind "p" { MovePaneBackwards; }
         bind "h" "Left" { MovePane "Left"; }
@@ -81,8 +79,9 @@ keybinds clear-defaults=true {
         bind "H" { MoveTab "Left"; }
         bind "L" { MoveTab "Right"; }
     }
+    // [ ] m c need shell integration (OSC 133), see ~/.config/zsh/osc133.zsh.
     scroll {
-        bind "Ctrl f" { SwitchToMode "Normal"; }
+        bind "Ctrl c" { ScrollToBottom; SwitchToMode "Normal"; }
         bind "e" { EditScrollback; SwitchToMode "Normal"; }
         bind "s" { SwitchToMode "EnterSearch"; SearchInput 0; }
         bind "G" { ScrollToBottom; SwitchToMode "Normal"; }
@@ -92,17 +91,23 @@ keybinds clear-defaults=true {
         bind "Ctrl b" "PageUp" "Left" "h" { PageScrollUp; }
         bind "d" { HalfPageScrollDown; }
         bind "u" { HalfPageScrollUp; }
-        // uncomment this and adjust key if using copy_on_select=false
-        // bind "Alt c" { Copy; }
+        bind "[" { ScrollToPreviousPrompt; }
+        bind "]" { ScrollToNextPrompt; }
+        bind "m" { SelectCommandAtScrollPosition; }
+        bind "c" { CopyLastCommandOutput; SwitchToMode "Normal"; }
     }
     search {
         bind "Ctrl /" { SwitchToMode "Normal"; }
+        bind "Ctrl c" { ScrollToBottom; SwitchToMode "Normal"; }
         bind "j" "Down" { ScrollDown; }
         bind "k" "Up" { ScrollUp; }
         bind "Ctrl f" "PageDown" "Right" "l" { PageScrollDown; }
         bind "Ctrl b" "PageUp" "Left" "h" { PageScrollUp; }
         bind "d" { HalfPageScrollDown; }
         bind "u" { HalfPageScrollUp; }
+        bind "[" { ScrollToPreviousPrompt; }
+        bind "]" { ScrollToNextPrompt; }
+        bind "m" { SelectCommandAtScrollPosition; }
         bind "n" { Search "down"; }
         bind "p" { Search "up"; }
         bind "c" { SearchToggleOption "CaseSensitivity"; }
@@ -110,7 +115,7 @@ keybinds clear-defaults=true {
         bind "o" { SearchToggleOption "WholeWord"; }
     }
     entersearch {
-        bind "Ctrl f" "Esc" { SwitchToMode "Scroll"; }
+        bind "Ctrl f" "Ctrl c" "Esc" { SwitchToMode "Scroll"; }
         bind "Enter" { SwitchToMode "Search"; }
     }
     renametab {
@@ -124,8 +129,48 @@ keybinds clear-defaults=true {
     session {
         bind "Ctrl x" { SwitchToMode "Normal"; }
         bind "d" { Detach; }
+        // Quit lives here, not on a global key, so it can't be hit by accident.
+        bind "q" { Quit; }
+        bind "]" { FocusHostSession; SwitchToMode "Normal"; }
+        bind "[" { FocusGuestSession; SwitchToMode "Normal"; }
+        bind "f" { ToggleHostFullscreen; SwitchToMode "Normal"; }
         bind "w" {
-            LaunchOrFocusPlugin "zellij:session-manager" {
+            LaunchOrFocusPlugin "session-manager" {
+                floating true
+                move_to_focused_tab true
+            };
+            SwitchToMode "Normal"
+        }
+        bind "c" {
+            LaunchOrFocusPlugin "configuration" {
+                floating true
+                move_to_focused_tab true
+            };
+            SwitchToMode "Normal"
+        }
+        bind "p" {
+            LaunchOrFocusPlugin "plugin-manager" {
+                floating true
+                move_to_focused_tab true
+            };
+            SwitchToMode "Normal"
+        }
+        bind "a" {
+            LaunchOrFocusPlugin "zellij:about" {
+                floating true
+                move_to_focused_tab true
+            };
+            SwitchToMode "Normal"
+        }
+        bind "s" {
+            LaunchOrFocusPlugin "zellij:share" {
+                floating true
+                move_to_focused_tab true
+            };
+            SwitchToMode "Normal"
+        }
+        bind "l" {
+            LaunchOrFocusPlugin "zellij:layout-manager" {
                 floating true
                 move_to_focused_tab true
             };
@@ -157,11 +202,11 @@ keybinds clear-defaults=true {
     }
     shared_except "locked" {
         bind "Ctrl g" { SwitchToMode "Locked"; }
-        bind "Ctrl q" { Quit; }
         bind "Alt n" { NewPane; }
-        unbind "Alt f"  // Unbind to prevent Alt+Right conflict on macOS
         bind "Alt Space" { ToggleFloatingPanes; }
         bind "Alt e" { TogglePaneEmbedOrFloating; }
+        bind "Alt p" { TogglePaneInGroup; }
+        bind "Alt \\" { FocusLastPane; }
         // Ghostty-style pane navigation (macOS standard)
         bind "Super Alt Left" { MoveFocusOrTab "Left"; }
         bind "Super Alt Right" { MoveFocusOrTab "Right"; }
@@ -178,8 +223,33 @@ keybinds clear-defaults=true {
         bind "Alt ." { GoToNextTab; }
         bind "Alt =" "Alt +" { Resize "Increase"; }
         bind "Alt -" { Resize "Decrease"; }
+        // Blocked by Hyprland on Linux; Ctrl p then [ / ] works everywhere.
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
+        bind "Alt g" {
+            LaunchOrFocusPlugin "room" {
+                floating true
+                move_to_focused_tab true
+                ignore_case true
+            };
+            SwitchToMode "Normal"
+        }
+        bind "Alt b" {
+            LaunchOrFocusPlugin "harpoon" {
+                floating true
+                move_to_focused_tab true
+            };
+            SwitchToMode "Normal"
+        }
+        // Fuzzy-find a file under the focused pane's cwd and copy its path.
+        bind "Alt /" {
+            Run "zellij-find-file" {
+                floating true
+                close_on_exit true
+                name "find file"
+            };
+            SwitchToMode "Normal"
+        }
     }
     shared_except "normal" "locked" {
         bind "Enter" "Esc" { SwitchToMode "Normal"; }
@@ -188,15 +258,11 @@ keybinds clear-defaults=true {
         bind "Ctrl p" { SwitchToMode "Pane"; }
     }
     shared_except "tab" "locked" {
+        bind "Ctrl t" { SwitchToMode "Tab"; }
         bind "Alt ;" { ToggleTab; SwitchToMode "Normal"; }
-        bind "Alt i" { MoveTab "Left"; }
-        bind "Alt o" { MoveTab "Right"; }
     }
     shared_except "resize" "locked" {
         bind "Ctrl n" { SwitchToMode "Resize"; }
-    }
-    shared_except "move" "locked" {
-        bind "Alt m" { SwitchToMode "Move"; }
     }
     shared_except "scroll" "locked" {
         bind "Ctrl f" { SwitchToMode "Scroll"; }
@@ -204,148 +270,74 @@ keybinds clear-defaults=true {
     shared_except "session" "locked" {
         bind "Ctrl x" { SwitchToMode "Session"; }
     }
-    shared_except "tab" "locked" {
-        bind "Ctrl t" { SwitchToMode "Tab"; }
-    }
-    shared_except "renametab" "locked" {
-        bind "Alt r" { SwitchToMode "RenameTab"; }
-    }
     shared_except "tmux" "locked" {
         bind "Ctrl b" { SwitchToMode "Tmux"; }
     }
 }
 
-// Plugins configuration
+// Plugin aliases. Changes require a restart.
 plugins {
-    tab-bar { path "tab-bar"; }
-    status-bar { path "status-bar"; }
-}
-
-// Choose what to do when zellij receives SIGTERM, SIGINT, SIGQUIT or SIGHUP
-// eg. when terminal window with an active zellij session is closed
-// Options:
-//   - detach (Default)
-//   - quit
-//
-on_force_close "detach"
-
-//  Send a request for a simplified ui (without arrow fonts) to plugins
-//  Options:
-//    - true
-//    - false (Default)
-//
-simplified_ui false
-
-// Choose the path to the default shell that zellij will use for opening new panes
-// Default: $SHELL
-//
-// default_shell "fish"
-
-// Toggle between having pane frames around the panes
-// Options:
-//   - true (default)
-//   - false
-//
-pane_frames true
-
-// Toggle between having Zellij lay out panes according to a predefined set of layouts whenever possible
-// Options:
-//   - true (default)
-//   - false
-//
-// auto_layout true
-
-// Catppuccin Mocha theme
-themes {
-    catppuccin-mocha {
-        bg "#585b70" // Surface2
-        fg "#cdd6f4" // Text
-        red "#f38ba8"
-        green "#a6e3a1"
-        yellow "#f9e2af"
-        blue "#89b4fa"
-        magenta "#f5c2e7"
-        orange "#fab387"
-        cyan "#89dceb"
-        black "#181825" // Mantle
-        white "#cdd6f4" // Text
+    tab-bar location="zellij:tab-bar"
+    status-bar location="zellij:status-bar"
+    strider location="zellij:strider"
+    // F1 toggles the keybinding hints; they also appear when entering a mode.
+    compact-bar location="zellij:compact-bar" {
+        tooltip "F1"
     }
+    session-manager location="zellij:session-manager"
+    welcome-screen location="zellij:session-manager" {
+        welcome_screen true
+    }
+    filepicker location="zellij:strider" {
+        cwd "/"
+    }
+    configuration location="zellij:configuration"
+    plugin-manager location="zellij:plugin-manager"
+    about location="zellij:about"
+    // Third-party plugins, pinned release binaries stored in ./plugins:
+    // room v1.2.1 (github.com/rvcas/room), harpoon v0.3.0 (github.com/Nacho114/harpoon)
+    room location="file:~/.config/zellij/plugins/room.wasm"
+    harpoon location="file:~/.config/zellij/plugins/harpoon.wasm"
 }
 
-// Choose the theme that is specified in the themes section.
-// Default: default
-//
+// Background plugins loaded on session start. link highlights file paths and
+// opens them in $EDITOR on Alt+Click.
+load_plugins {
+    "zellij:link"
+}
+
+// Built-in Catppuccin Mocha (new theme spec, styles the compact bar too).
 theme "catppuccin-mocha"
 
-// The name of the default layout to load on startup
-// Default: "default"
-//
-// default_layout "compact"
+// One title line above each pane instead of a full border.
+pane_frame_style "titles"
 
-// Choose the mode that zellij uses when starting up.
-// Default: normal
-//
-// default_mode "locked"
+show_startup_tips false
+show_release_notes true
 
-// The directory new panes/tabs open in. Without this, panes inherit the cwd of
-// whatever directory launched the session.
-//
-// Must be a literal absolute path: zellij 0.44 expands neither ~ nor $HOME, and
-// silently ignores the setting if you use either. Edit this for your machine.
-default_cwd "/home/phrabos/Projects"
+// No default_cwd here on purpose. It only accepts a literal absolute path
+// (zellij expands neither ~ nor $HOME), and /home vs /Users means no single
+// value works on both machines. Pass it at launch instead - the shell expands
+// $HOME there:
+//   zellij options --default-cwd "$HOME/Projects"
+// Without it, panes start in whatever directory launched the session.
 
-// Toggle enabling the mouse mode.
-// On certain configurations, or terminals this could
-// potentially interfere with copying text.
-// Options:
-//   - true (default)
-//   - false
-//
-// mouse_mode false
-
-// Lines of scrollback kept per pane (default 10000). Halved — every pane holds
+// Lines of scrollback kept per pane (default 10000). Halved: every pane holds
 // its own buffer, so a many-pane session costs hundreds of MB at the default.
 scroll_buffer_size 5000
 
-// Provide a command to execute when copying text. The text will be piped to
-// the stdin of the program to perform the copy. This can be used with
-// terminal emulators which do not support the OSC 52 ANSI control sequence
-// that will be used by default if this option is not set.
-// Examples:
+// Also save each pane's visible screen with the session, so a resurrected
+// session (after a logout or reboot) shows what was on screen instead of empty
+// panes. Tabs, splits, cwds and commands are restored regardless.
 //
-// copy_command "xclip -selection clipboard" // x11
-// copy_command "wl-copy"                    // wayland
-// copy_command "pbcopy"                     // osx (disabled - using OSC 52 via Ghostty instead)
+// scrollback_lines_to_serialize is left unset on purpose: unset saves only the
+// visible screen, 0 would save the whole scrollback. Saved text lands in plain
+// files under ~/.cache/zellij, so keep it small (lab output, tokens, flags).
+//
+// Requires a zellij restart to take effect.
+serialize_pane_viewport true
 
-// Choose the destination for copied text
-// Allows using the primary selection buffer (on x11/wayland) instead of the system clipboard.
-// Does not apply when using copy_command.
-// Options:
-//   - system (default)
-//   - primary
-//
-// copy_clipboard "primary"
+// No copy_command: copying uses OSC 52, which Ghostty supports on both machines.
 
-// Enable or disable automatic copy (and clear) of selection when releasing mouse
-// Default: true
-//
-// copy_on_select false
-
-// Path to the default editor to use to edit pane scrollbuffer
-// Default: $EDITOR or $VISUAL
-//
+// Opens pane scrollback (Ctrl f, e) in a stripped-down nvim.
 scrollback_editor "zellij-scrollback"
-
-// When attaching to an existing session with other users,
-// should the session be mirrored (true)
-// or should each user have their own cursor (false)
-// Default: false
-//
-// mirror_session true
-
-// The folder in which Zellij will look for layouts
-//
-// layout_dir "/path/to/layout/dir"
-
-// The folder in which Zellij will look for themes
-// Set to the same directory as the config file

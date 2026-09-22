@@ -1,0 +1,60 @@
+// Default layout for new sessions. Overrides Zellij's built-in "default"
+// layout. Captured from a live session (`zellij action dump-layout`) on
+// 2026-09-22, so tab names, pane names and sizes are exactly as they were set
+// up by hand. Tabs opened later get a single pane with the compact bar
+// (default_tab_template).
+// Swap layouts (Alt [ / Alt ], or Ctrl p then [ / ]) live in default.swap.kdl.
+//
+// cwd paths use ~, which layouts expand (config.kdl's default_cwd does not),
+// so they resolve on both machines no matter where zellij is launched from.
+// ~/Projects also matches macOS's ~/projects: APFS is case-insensitive.
+//
+// Command panes (btop, claude) use start_suspended: they open showing the
+// command and wait for Enter, so a new session never auto-launches claude with
+// --dangerously-skip-permissions.
+layout {
+    default_tab_template {
+        children
+        pane size=1 borderless=true {
+            plugin location="zellij:compact-bar" {
+                tooltip "F1"
+            }
+        }
+    }
+
+    tab name="system" {
+        pane command="btop" name="btop" cwd="~/Projects" {
+            start_suspended true
+        }
+    }
+
+    tab name="term" focus=true cwd="~" {
+        pane command="claude" focus=true {
+            args "--dangerously-skip-permissions"
+            start_suspended true
+        }
+    }
+
+    // Right column uses fixed rows/columns, not percentages: Zellij 0.45
+    // resets every percentage in a column that contains a nested split to an
+    // equal share (20/30/50 came out 33/33/33). Sizes are the hand-tuned ones
+    // from a 42x210 Ghostty window; scratch and pings have no size so they
+    // absorb whatever a different window size leaves over.
+    tab name="htb" {
+        pane split_direction="vertical" {
+            pane name="scripts" cwd="~/Projects/htb/labs" size="50%"
+            pane size="50%" {
+                pane size=8 split_direction="vertical" {
+                    pane name="vpn"   cwd="~/Projects/htb/vpn" size=63
+                    pane name="pings" cwd="~/Projects/htb"
+                }
+                pane name="enumerations" cwd="~/Projects/htb/labs" size=12
+                pane name="scratch"      cwd="~/Projects/htb"
+            }
+        }
+    }
+
+    tab name="ssh" cwd="~" {
+        pane
+    }
+}

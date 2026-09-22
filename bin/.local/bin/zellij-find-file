@@ -1,0 +1,21 @@
+#!/bin/sh
+# Fuzzy file finder for a floating Zellij pane (bound to Alt / in config.kdl).
+# Lists files under the focused pane's cwd with fd (respects .gitignore,
+# includes dotfiles, skips .git), previews with bat, and copies the pick to the
+# clipboard. Enter copies the absolute path, Ctrl-r the path relative to cwd.
+# The pane closes on exit.
+fd --type f --hidden --exclude .git --color=never |
+  fzf --prompt "$(basename "$PWD")/ " \
+      --preview 'bat --color=always --style=numbers --line-range=:300 {}' \
+      --preview-window 'right,60%,border-left' \
+      --expect ctrl-r |
+  {
+    read -r key
+    read -r file
+    [ -n "$file" ] || exit 0
+    if [ "$key" = ctrl-r ]; then
+      printf '%s' "$file" | clipcopy
+    else
+      printf '%s' "$PWD/$file" | clipcopy
+    fi
+  }
