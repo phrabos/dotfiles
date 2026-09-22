@@ -1,0 +1,88 @@
+#!/bin/sh
+# Wayland screenshots for Hyprland - the replacement for screenshot-region,
+# which shells out to xfce4-screenshooter and so is X11-only.
+#
+# Bound on SUPER+SHIFT+<3|4|5>, mirroring macOS Cmd+Shift+3/4:
+#   3 = full screen, 4 = region, 5 = window; add CTRL to copy instead of save.
+#
+# Saves go to the same place the XFCE script used, with the same filename
+# format, so both desktops drop screenshots in one pile:
+#   $(xdg-user-dir PICTURES)/sh/Screenshot_YYYY-MM-DD_HH_MM_SS.png
+#
+# Usage: screenshot-wl <region|full|window> [-c|--clipboard|-a|--annotate]
+
+mode="${1:-region}"
+clip="$2"
+
+DIR="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/sh"
+SOUND=/usr/share/sounds/freedesktop/stereo/screen-capture.oga
+
+# Same shutter sound as the XFCE script.
+play_sound() {
+    if command -v pw-play >/dev/null 2>&1; then
+        pw-play "$SOUND" >/dev/null 2>&1 &
+    elif command -v paplay >/dev/null 2>&1; then
+        paplay "$SOUND" >/dev/null 2>&1 &
+    fi
+}
+
+# grim -g takes "X,Y WxH". slurp emits that directly; for a window we build it
+# from hyprctl, since grimblast/hyprshot are not packaged for Kali.
+geometry() {
+    case "$mode" in
+        region)
+            slurp 2>/dev/null
+            ;;
+        window)
+            hyprctl activewindow -j 2>/dev/null | python3 -c '
+import json,sys
+w = json.load(sys.stdin)
+x, y = w["at"]
+cx, cy = w["size"]
+print(f"{x},{y} {cx}x{cy}")
+' 2>/dev/null
+            ;;
+        full)
+            ;;   # empty -> grim captures everything
+    esac
+}
+
+geo="$(geometry)"
+
+# slurp returns empty and non-zero if you press Escape; do not fire in that case.
+if [ "$mode" != "full" ] && [ -z "$geo" ]; then
+    exit 0
+fi
+
+case "$clip" in
+-a | --annotate)
+    # Hand the capture to swappy for cropping/markup. swappy does its own
+    # save and clipboard actions from there, so this path does neither.
+    if [ -n "$geo" ]; then
+        grim -g "$geo" - | swappy -f -
+    else
+        grim - | swappy -f -
+    fi
+    play_sound
+    ;;
+-c | --clipboard)
+    if [ -n "$geo" ]; then
+        grim -g "$geo" - | wl-copy --type image/png
+    else
+        grim - | wl-copy --type image/png
+    fi
+    play_sound
+    notify-send -t 2000 -i camera-photo "Screenshot copied" "$mode"
+    ;;
+*)
+    mkdir -p "$DIR"
+    out="$DIR/Screenshot_$(date +%F_%H_%M_%S).png"
+    if [ -n "$geo" ]; then
+        grim -g "$geo" "$out"
+    else
+        grim "$out"
+    fi
+    play_sound
+    notify-send -t 2000 -i camera-photo "Screenshot saved" "$(basename "$out")"
+    ;;
+esac

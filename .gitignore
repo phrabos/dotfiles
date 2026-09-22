@@ -17,3 +17,8 @@ approvals.toml.lock
 
 # Lock and session files
 *.lock
+
+# Written by nwg-displays for this machine's screens (hyprland.lua replays
+# monitors.conf and falls back to the laptop panel when it is absent).
+hypr/.config/hypr/monitors.conf
+hypr/.config/hypr/workspaces.conf

@@ -1,0 +1,156 @@
+// waybar - status bar for Hyprland
+//
+// Workspace names mirror the AeroSpace slots: 1 terminal, 2 browsers,
+// 5 Obsidian, 6 security tooling, 7 blackhole, 8 chat (Discord),
+// 10 keyboard config.
+{
+  "layer": "top",
+  "position": "top",
+  "height": 30,
+  "spacing": 8,
+
+  "modules-left": ["hyprland/workspaces", "hyprland/submap"],
+  "modules-center": ["hyprland/window"],
+  "modules-right": [
+    "custom/ipswitch",
+    "network",
+    "bluetooth",
+    "pulseaudio",
+    "memory",
+    "battery",
+    "clock",
+    "tray",
+    "custom/power"
+  ],
+
+  "hyprland/workspaces": {
+    // No on-click here: hyprland/workspaces switches workspace on click
+    // natively and documents only on-click-window. "on-click": "activate" is
+    // the sway module's idiom and does nothing here.
+    "format": "{icon}",
+    "format-icons": {
+      "1": "1",
+      "2": "2",
+      "3": "3",
+      "4": "4",
+      "5": "5",
+      "6": "6",
+      "7": "7",
+      "8": "8",
+      "9": "9",
+      "10": "0"
+    },
+    // Keyed by OUTPUT, not by workspace. The hyprland module takes
+    // output -> count ({"*": 5}) or output -> workspace ids ({"*": [1,2]}).
+    // The workspace -> outputs form ({"1": [], ...}) is the sway module's
+    // shape; using it here silently renders no persistent workspaces.
+    // "*" covers any monitor, so this survives attaching an external display.
+    "persistent-workspaces": {
+      "*": [1, 2, 5, 6, 7, 8]
+    }
+  },
+
+  // Shows "resize" / "service" when a submap is active, so the modes from
+  // .aerospace.toml are visible instead of silent.
+  "hyprland/submap": {
+    "format": "󰌌 {}",
+    "tooltip": false
+  },
+
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 60,
+    "separate-outputs": true
+  },
+
+  // Port of the XFCE genmon IP switcher. Left click cycles interface,
+  // right click copies the shown IP. Shares its state file with
+  // genmon-ipswitch.sh so the XFCE panel and waybar stay in agreement.
+  // The pkill refreshes the module immediately after a cycle rather than
+  // waiting out the interval; 8 matches "signal" below.
+  "custom/ipswitch": {
+    "exec": "/home/phrabos/.local/bin/waybar-ipswitch.sh",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 8,
+    "format": "󰩠 {}",
+    "on-click": "/home/phrabos/.local/bin/waybar-ipswitch.sh cycle && pkill -RTMIN+8 waybar",
+    "on-click-right": "/home/phrabos/.local/bin/waybar-ipswitch.sh copy"
+  },
+
+  "network": {
+    "interval": 5,
+    "format-wifi": "  {essid} {signalStrength}%",
+    "format-ethernet": "󰈀 {ipaddr}",
+    "format-disconnected": "󰤭 offline",
+    "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-wifi": "{essid}  {signalStrength}% ({signaldBm} dBm)\n{ipaddr}/{cidr}\n{frequency} MHz",
+    "tooltip-format-ethernet": "{ifname}: {ipaddr}/{cidr}\ngateway {gwaddr}",
+    "on-click": "nm-connection-editor"
+  },
+
+  "bluetooth": {
+    "format": "󰂯",
+    "format-on": "󰂯",
+    "format-off": "󰂲",
+    "format-disabled": "󰂲",
+    "format-connected": "󰂱 {num_connections}",
+    "format-connected-battery": "󰂱 {device_battery_percentage}%",
+    "tooltip-format": "{controller_alias}\n{status}",
+    "tooltip-format-connected": "{controller_alias}\n{num_connections} connected\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+    "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_battery_percentage}%",
+    "on-click": "blueman-manager"
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": "󰝟 muted",
+    "format-icons": { "default": ["", "", ""] },
+    "on-click": "pavucontrol"
+  },
+
+  "memory": {
+    "format": "  {percentage}%",
+    "interval": 5
+  },
+
+  // events fires notify-send directly, so low-battery alerts work without a
+  // separate power daemon. <status> is charging|discharging and <state> comes
+  // from the "states" object below; both are documented in waybar-battery(5).
+  "battery": {
+    "bat": "BAT0",
+    "interval": 30,
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{icon} {capacity}%",
+    // Only format-<status> with charging|discharging is documented. Yours
+    // reports "Not charging" at 100% on AC, which matches neither, so plain
+    // "format" renders that case.
+    "format-charging": "󰂄 {capacity}%",
+    "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"],
+    "format-time": "{H}h {M}m",
+    "events": {
+      "on-discharging-warning": "notify-send -u normal -i battery-caution 'Battery low' '30% remaining'",
+      "on-discharging-critical": "notify-send -u critical -i battery-empty 'Battery critical' '15% remaining — plug in now'",
+      "on-discharging-5": "notify-send -u critical -i battery-empty 'Battery at 5%' 'Shutting down soon'"
+    }
+  },
+
+  "clock": {
+    "format": "{:%a %d %b  %H:%M}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>"
+  },
+
+  "tray": {
+    "spacing": 10
+  },
+
+  "custom/power": {
+    "format": "⏻",
+    "tooltip": false,
+    "on-click": "hyprshutdown"
+  }
+}

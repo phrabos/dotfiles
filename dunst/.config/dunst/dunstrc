@@ -1,0 +1,80 @@
+# dunst - notification daemon. Catppuccin Mocha, mauve accent, matching
+# ghostty/nvim/zellij/lazygit/btop.
+#
+# dunst rather than mako: mako has no installation candidate in Kali.
+# Not started from hyprland.lua - dunst ships a D-Bus activation file for
+# org.freedesktop.Notifications and a Type=dbus systemd user unit, so it comes
+# up on demand at the first notification.
+#
+# Key names verified against /etc/xdg/dunst/dunstrc as shipped by dunst 1.13.2.
+# Note `height` is a (min, max) tuple in this version, not a scalar.
+
+[global]
+    font = IosevkaTerm Nerd Font Mono 11
+    markup = full
+    format = "<b>%s</b>\n%b"
+
+    layer = overlay
+    origin = top-right
+    offset = (12, 12)
+    width = 360
+    height = (0, 120)
+    notification_limit = 5
+
+    padding = 14
+    horizontal_padding = 14
+    frame_width = 2
+    corner_radius = 8
+    gap_size = 6
+    separator_height = 2
+    separator_color = frame
+
+    # 20% ≈ ghostty's background-opacity 0.8
+    transparency = 20
+
+    frame_color = "#cba6f7"
+    idle_threshold = 0
+    sort = urgency_descending
+    show_age_threshold = 60
+    stack_duplicates = true
+    hide_duplicate_count = false
+    indicate_hidden = yes
+
+    mouse_left_click = close_current
+    mouse_middle_click = do_action, close_current
+    mouse_right_click = close_all
+
+[urgency_low]
+    background = "#1e1e2e"
+    foreground = "#a6adc8"
+    frame_color = "#6c7086"
+    timeout = 4
+
+[urgency_normal]
+    background = "#1e1e2e"
+    foreground = "#cdd6f4"
+    frame_color = "#cba6f7"
+    timeout = 6
+
+[urgency_critical]
+    background = "#1e1e2e"
+    foreground = "#f38ba8"
+    frame_color = "#f38ba8"
+    timeout = 0
+
+# ---- Muted apps --------------------------------------------------------------
+# One section per app; section names are free-form but must be unique.
+# Rules run top to bottom, and each matching rule applies its settings.
+#   skip_display   never draw it
+#   history_ignore keep it out of `dunstctl history` too
+#
+# Matching is glob (enable_regex is off). Check the fields a sender actually
+# sets with `dunstctl history` - some leave appname empty (Ghostty sends
+# appname "" with summary "Ghostty"), so match on summary for those.
+
+# hyprshell 4.10.8's release-note notification never expires: notify_resident
+# sets a 12s timeout and then overwrites it with 0. It is noise either way.
+[mute_hyprshell]
+    appname = hyprshell
+    skip_display = true
+    history_ignore = true

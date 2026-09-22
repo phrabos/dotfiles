@@ -1,0 +1,26 @@
+# hyprshell - macOS-style Cmd+Tab switcher only.
+#
+# hyprshell registers its own binds with Hyprland at runtime (hl.bind over the
+# IPC socket), so there are no switcher binds in hyprland.lua.
+#
+# overview is deliberately left out: its default is a bare Super_L tap, and it
+# bundles a second launcher that would duplicate hyprlauncher on ALT+D.
+
+version = 4
+
+[windows]
+scale = 8.5
+items_per_row = 5
+
+[windows.switch]
+# Super, not the default Alt: the Voyager's GUI key is Cmd on macOS and Super
+# here, and ALT+Tab is already workspace back-and-forth from AeroSpace.
+modifier = "super"
+key = "Tab"
+# Every window on every monitor and workspace, like Cmd+Tab across Spaces.
+filter_by = []
+switch_workspaces = false
+exclude_workspaces = "special:.*"
+# Super+Tab, then q while still holding Super closes the highlighted window -
+# the Cmd+Tab, Q habit from macOS.
+kill_key = "q"

@@ -1,0 +1,179 @@
+/* waybar - Catppuccin Mocha, matching ghostty/nvim/zellij/lazygit/btop.
+ * Accent is mauve, same as starship's catppuccin-mocha-mauve palette. */
+
+@define-color base     #1e1e2e;
+@define-color mantle   #181825;
+@define-color crust    #11111b;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color surface2 #585b70;
+@define-color overlay0 #6c7086;
+@define-color text     #cdd6f4;
+@define-color subtext0 #a6adc8;
+@define-color mauve    #cba6f7;
+@define-color blue     #89b4fa;
+@define-color sapphire #74c7ec;
+@define-color green    #a6e3a1;
+@define-color yellow   #f9e2af;
+@define-color peach    #fab387;
+@define-color red      #f38ba8;
+@define-color teal     #94e2d5;
+
+* {
+  font-family: "IosevkaTerm Nerd Font Mono";
+  font-size: 13px;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+}
+
+window#waybar {
+  /* 0.8 alpha matches ghostty's background-opacity */
+  background: alpha(@base, 0.8);
+  color: @text;
+}
+
+#workspaces {
+  margin: 4px 4px;
+}
+
+#workspaces button {
+  padding: 0 8px;
+  margin: 0 2px;
+  color: @overlay0;
+  background: transparent;
+  border-radius: 6px;
+}
+
+#workspaces button.active {
+  color: @base;
+  background: @mauve;
+}
+
+#workspaces button.urgent {
+  color: @base;
+  background: @red;
+}
+
+#workspaces button:hover {
+  background: @surface1;
+  color: @text;
+}
+
+#submap {
+  color: @base;
+  background: @peach;
+  padding: 0 10px;
+  margin: 4px 2px;
+  border-radius: 6px;
+}
+
+#window {
+  color: @subtext0;
+}
+
+window#waybar.empty #window {
+  background: transparent;
+}
+
+#custom-ipswitch,
+#network,
+#bluetooth,
+#pulseaudio,
+#memory,
+#battery,
+#clock,
+#tray,
+#custom-power {
+  padding: 0 10px;
+  margin: 4px 2px;
+  background: @surface0;
+  border-radius: 6px;
+}
+
+/* ─── IP switcher ──────────────────────────────────────────────────────────
+ * Classes come from the script: vpn (tun or wg interfaces), wan (public
+ * egress), lan (everything else), down (no address). The VPN case is
+ * deliberately the loudest - on a lab box, knowing tun0 is live matters more
+ * than anything else in this bar.
+ *
+ * NB: no glob patterns in these comments. A literal star-slash inside a CSS
+ * comment closes it early, and waybar refuses to start on a CSS parse error. */
+#custom-ipswitch.vpn {
+  color: @base;
+  background: @green;
+}
+
+#custom-ipswitch.wan {
+  color: @peach;
+}
+
+#custom-ipswitch.lan {
+  color: @sapphire;
+}
+
+#custom-ipswitch.down {
+  color: @overlay0;
+}
+
+#network {
+  color: @blue;
+}
+#network.disconnected {
+  color: @red;
+}
+
+#bluetooth {
+  color: @blue;
+}
+#bluetooth.disabled,
+#bluetooth.off {
+  color: @overlay0;
+}
+#bluetooth.connected {
+  color: @teal;
+}
+
+#pulseaudio {
+  color: @yellow;
+}
+#pulseaudio.muted {
+  color: @overlay0;
+}
+
+#memory {
+  color: @mauve;
+}
+
+/* Battery. #battery.<status> and #battery.<state> are both documented, and
+ * they combine as #battery.<status>.<state>. */
+#battery {
+  color: @green;
+}
+#battery.charging {
+  color: @teal;
+}
+#battery.warning {
+  color: @peach;
+}
+#battery.critical {
+  color: @base;
+  background: @red;
+}
+#battery.charging.critical {
+  /* charging out of a critical level is not an emergency - tone it back down */
+  color: @teal;
+  background: @surface0;
+}
+
+#clock {
+  color: @text;
+}
+
+#custom-power {
+  color: @red;
+}
+#custom-power:hover {
+  color: @base;
+  background: @red;
+}

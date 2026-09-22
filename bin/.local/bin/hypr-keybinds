@@ -1,0 +1,29 @@
+#!/bin/sh
+# Hyprland keybinding cheat sheet, bound to SUPER+K.
+#
+# Lists every bind that carries a description (hyprland.lua gives all of them
+# one) in hyprlauncher's dmenu mode, so it is searchable. Lua binds report
+# their dispatcher as "__lua", so the description is the only readable part.
+# modmask bits: SHIFT 1, CAPS 2, CTRL 4, ALT 8, SUPER 64.
+#
+# hyprshell's SUPER+Tab is registered by hyprshell itself without a
+# description, so it is added by hand.
+
+{
+    hyprctl binds -j | jq -r '
+        def mods:
+            [ (if (.modmask / 64 | floor) % 2 == 1 then "SUPER" else empty end),
+              (if (.modmask / 4  | floor) % 2 == 1 then "CTRL"  else empty end),
+              (if (.modmask / 8  | floor) % 2 == 1 then "ALT"   else empty end),
+              (if .modmask % 2 == 1                 then "SHIFT" else empty end) ];
+        def keyname:
+            { "mouse:272": "Left drag", "mouse:273": "Right drag",
+              "numbersign": "3", "dollar": "4", "percent": "5",
+              "bracketleft": "[", "bracketright": "]", "space": "Space" }[.key] // .key;
+        .[]
+        | select(.has_description)
+        | (mods + [keyname] | join(" + ")) as $combo
+        | (if .submap != "" then "[\(.submap)] " else "" end) + "\($combo)  —  \(.description)"
+    '
+    echo "SUPER + Tab  —  Window switcher (hyprshell)"
+} | hyprlauncher -m >/dev/null

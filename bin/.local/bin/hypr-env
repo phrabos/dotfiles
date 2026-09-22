@@ -1,0 +1,41 @@
+#!/bin/sh
+# Print export lines that re-point the current shell at the RUNNING Hyprland
+# session. Use as:  eval "$(hypr-env)"
+#
+# Why this exists: a zellij server inherits its environment once, when the
+# server starts, and never updates it. Reattach to a session that was started
+# under XFCE/X11 and its panes still carry DISPLAY=:0.0, XDG_SESSION_TYPE=x11
+# and no WAYLAND_DISPLAY -- so hyprctl, wl-copy, and any GUI launch from that
+# pane talk to a display that no longer exists. CLI tools are unaffected.
+#
+# Everything is discovered from $XDG_RUNTIME_DIR rather than hardcoded, since
+# the Hyprland instance signature changes on every login.
+
+RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+# Newest Hyprland instance. The directory name IS the signature hyprctl wants.
+his=""
+if [ -d "$RUNTIME/hypr" ]; then
+    his="$(ls -t "$RUNTIME/hypr" 2>/dev/null | head -n 1)"
+fi
+
+if [ -z "$his" ]; then
+    echo "# no running Hyprland instance found under $RUNTIME/hypr" >&2
+    echo "# (are you logged into Hyprland?)" >&2
+    exit 1
+fi
+
+# Wayland socket: prefer the one matching this instance, else the newest.
+wl=""
+for s in "$RUNTIME"/wayland-*; do
+    case "$s" in
+        *.lock) continue ;;
+    esac
+    [ -S "$s" ] && wl="$(basename "$s")"
+done
+
+printf 'export HYPRLAND_INSTANCE_SIGNATURE=%s\n' "$his"
+[ -n "$wl" ] && printf 'export WAYLAND_DISPLAY=%s\n' "$wl"
+printf 'export XDG_SESSION_TYPE=wayland\n'
+printf 'export XDG_CURRENT_DESKTOP=Hyprland\n'
+printf 'unset DISPLAY\n'
