@@ -24,7 +24,7 @@ on-focus-changed = ['move-mouse window-lazy-center']
 8 = 'HP VH240a'
 9 = 'HP VH240a'
 0 = 'Built-in Retina Display'
-tv = 'Beyond TV'         # ride-along - park browser/ghostty here (see alt-y)
+tv = 'Beyond TV'         # ride-along - park browser/ghostty here
 
 # Gaps
 [gaps]
@@ -87,9 +87,6 @@ alt-8 = 'workspace 8'
 alt-9 = 'workspace 9'
 alt-0 = 'workspace 0'
 
-# TV workspace - lives on Beyond TV, for reading while riding
-alt-y = 'workspace tv'
-
 # Move window to workspace (Alt+Shift+number)
 alt-shift-1 = 'move-node-to-workspace 1'
 alt-shift-2 = 'move-node-to-workspace 2'
@@ -101,9 +98,6 @@ alt-shift-7 = 'move-node-to-workspace 7'
 alt-shift-8 = 'move-node-to-workspace 8'
 alt-shift-9 = 'move-node-to-workspace 9'
 alt-shift-0 = 'move-node-to-workspace 0'
-
-# Throw focused window onto the TV and follow it
-alt-shift-y = ['move-node-to-workspace tv', 'workspace tv']
 
 # Switch to last workspace
 alt-tab = 'workspace-back-and-forth'

@@ -37,7 +37,7 @@ git clone git@github.com:phrabos/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
 brew bundle --file=./Brewfile     # 3 taps, 43 formulae, 26 casks
-stow $(ls -d */ | grep -v '^zsh-linux/')
+stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|dunst|gtk)/')
 
 # Third-party taps require explicit trust before Homebrew will load them
 brew trust --cask nikitabobko/tap/aerospace
@@ -67,7 +67,9 @@ stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace)/')
 git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
 ```
 
-`aerospace` is a macOS window manager; skip it. See [LINUX.md](LINUX.md) for the
+`aerospace` is a macOS window manager; skip it. Its Linux counterpart is the
+`hypr` package (plus `waybar` and `dunst`), which mirrors the AeroSpace
+keybindings under Hyprland. See [LINUX.md](LINUX.md) for the
 package-by-package translation of the Brewfile and the tools that need a
 vendor repo or release binary.
 
@@ -97,7 +99,7 @@ stow -R <package>   # restow, after renaming files
 stow -n -v <pkg>    # dry run, shows every link without making one
 
 # link all — note the platform exclusion, see "Platform split" above
-stow $(ls -d */ | grep -v '^zsh-linux/')                        # macOS
+stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|dunst|gtk)/')    # macOS
 stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace)/')           # Linux
 ```
 
@@ -116,7 +118,11 @@ into the matching package here first, then stow.
 | `zsh-macos` | `.zshrc` `.zprofile` (macOS only) |
 | `zsh-linux` | `.zshrc` `.zprofile` (Linux only) |
 | `git` | `.gitconfig`, `.config/git/ignore` |
-| `aerospace` | `.aerospace.toml` |
+| `aerospace` | `.aerospace.toml` (macOS only) |
+| `hypr` | `.config/hypr/` (Linux only) |
+| `waybar` | `.config/waybar/` (Linux only) |
+| `dunst` | `.config/dunst/dunstrc` (Linux only) |
+| `gtk` | `.config/gtk-3.0/`, `.config/gtk-4.0/` (Linux only) |
 | `nvim` | `.config/nvim/` (LazyVim) |
 | `zellij` | `.config/zellij/` |
 | `ghostty` | `.config/ghostty/` |
@@ -152,16 +158,18 @@ machine after cloning:
   EOF
   ```
 
-- **Zellij `default_cwd`** — a literal absolute path in
-  `zellij/.config/zellij/config.kdl`, currently `/home/phrabos/Projects`.
-  Zellij 0.44 expands neither `~` nor `$HOME` and silently ignores the setting
-  if you use either, so a literal path is the only form that works. This is the
-  one line in the repo that cannot be shared between machines — edit it after
-  cloning. On macOS it is `/Users/phrabos/projects`.
+- **Zellij `default_cwd`** is deliberately not set in
+  `zellij/.config/zellij/config.kdl`. It only takes a literal absolute path
+  (Zellij expands neither `~` nor `$HOME` there), and `/home` vs `/Users`
+  means no single value works on both machines. Pass it at launch instead:
+  `zellij options --default-cwd "$HOME/Projects"`. The default layout does not
+  depend on it: layout `cwd` values do expand `~`, so its panes open in the
+  right place wherever Zellij is started.
 
-  Note the capital `P` on Linux: ext4 is case-sensitive and Kali registers
-  `~/Projects` as `XDG_PROJECTS_DIR`, so the lowercase macOS spelling will not
-  resolve here.
+  `~/Projects` has a capital `P`: ext4 on Linux is case-sensitive and Kali
+  registers `~/Projects` as `XDG_PROJECTS_DIR`. The macOS folder is
+  `~/projects`, but APFS is case-insensitive, so `~/Projects` resolves there
+  too.
 
 AeroSpace's `workspace-to-monitor-force-assignment` also names specific
 displays; adjust or delete those lines for your setup.

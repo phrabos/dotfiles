@@ -276,12 +276,99 @@ showhold` prints nothing on this apt version even when the hold is set.
 Still to do: Slack, gcloud, Proton Mail Bridge, pgAdmin4, GnuCash, Zen,
 keymapp. Firefox and Wireshark already ship with Kali.
 
+## Hyprland desktop
+
+The compositor and its tooling come from apt:
+
+```bash
+sudo apt install -y hyprland hyprpaper hyprlock hypridle hyprshutdown \
+  hyprland-guiutils hyprlauncher xdg-desktop-portal-hyprland xwayland \
+  waybar dunst cliphist grim slurp wl-clipboard swappy playerctl \
+  brightnessctl nwg-displays papirus-icon-theme sassc
+```
+
+Note `hyprland-qtutils` is a transitional package — install `hyprland-guiutils`.
+`mako` has no candidate in Kali, so the notification daemon is **dunst**.
+
+### Window switcher — hyprshell
+
+The Cmd+Tab overlay on `Super+Tab` is [hyprshell](https://github.com/H3rmt/hyprshell)
+(the renamed successor of hyprswitch). It is not packaged in Kali; take the
+release tarball. It needs Hyprland 0.55+ with the Lua config, GTK 4.18+ and
+libadwaita 1.8+, all of which Kali already has — only the layer-shell library is
+missing:
+
+```bash
+sudo apt install -y libgtk4-layer-shell0
+gh release download v4.10.8 -R H3rmt/hyprshell -p 'hyprshell-4.10.8-x86_64.tar.zst'
+tar --zstd -xf hyprshell-4.10.8-x86_64.tar.zst hyprshell
+install -m755 hyprshell ~/.local/bin/hyprshell
+stow hyprshell
+```
+
+`hyprland.lua` autostarts `hyprshell run`, which registers its own binds over
+IPC — there are no switcher binds in the Hyprland config. The shipped
+`hyprshell.service` hardcodes `/usr/bin/hyprshell`, so it is not used.
+
+### Theming — not packaged, and the official theme is dead
+
+`catppuccin/gtk` was archived in June 2024. The maintained successor is
+[Fausto-Korpsvart/Catppuccin-GTK-Theme](https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme),
+which unlike the original handles GTK4/libadwaita.
+
+```bash
+git clone --depth 1 https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme.git
+cd Catppuccin-GTK-Theme/themes
+./install.sh -d ~/.local/share/themes -a mauve -m dark -l
+```
+
+Mocha is the default flavour; frappé and macchiato are opt-in `--tweaks`. The
+installer needs `sassc` and will try to `sudo apt install` it itself, which
+fails without a TTY — install it first. It also ends on an interactive GNOME
+Shell prompt that errors out under a non-interactive shell; the GTK theme is
+already fully installed by then, so that error is safe to ignore. The one thing
+it skips on that error is the `-l` libadwaita link, done by hand:
+
+```bash
+T=~/.local/share/themes/Catppuccin-Mauve-Dark/gtk-4.0
+for f in gtk.css gtk-dark.css assets; do ln -sfn "$T/$f" ~/.config/gtk-4.0/$f; done
+```
+
+**Stow trap:** if `~/.config/gtk-4.0` is a folded *directory* symlink into this
+repo, that loop writes a 600 MB theme into version control. The `gtk` package
+must be stowed with `--no-folding` so only `settings.ini` is linked.
+
+Cursors come from [catppuccin/cursors](https://github.com/catppuccin/cursors)
+releases — the zip carries a native `hyprcursors/` directory as well as
+XCursor, so both `HYPRCURSOR_THEME` and `XCURSOR_THEME` are set:
+
+```bash
+curl -fsSLO https://github.com/catppuccin/cursors/releases/download/v2.0.0/catppuccin-mocha-mauve-cursors.zip
+unzip -q catppuccin-mocha-mauve-cursors.zip -d ~/.local/share/icons/
+```
+
+Icons are stock `Papirus-Dark`. Catppuccin folder recolouring needs
+[catppuccin/papirus-folders](https://github.com/catppuccin/papirus-folders)
+copied into `/usr/share/icons/Papirus/` — it cannot be done per-user, because
+Papirus-Dark symlinks its 32/48/64/128px directories into `../Papirus/` and so
+is not standalone.
+
+Themes live in `~/.local/share/{themes,icons}` and are deliberately **not** in
+this repo — too large, and machine-local.
+
+### nwg-displays needs a shim under the Lua config
+
+nwg-displays writes hyprlang `monitor=` lines to `~/.config/hypr/monitors.conf`
+and its docs say to add `source = ...` to your config. There is no `source` in
+the Lua config, so that file would be written and silently ignored. `hypr`'s
+`hyprland.lua` reads it and replays each line through `hl.monitor()` instead.
+
 ## Dropped — macOS only
 
 | Brewfile entry | Why |
 |---|---|
 | `duti` | sets default apps on macOS; replaced by `update-alternatives` + `xdg-terminals.list` + the XFCE helper above |
-| `aerospace` | macOS tiling WM |
+| `aerospace` | macOS tiling WM; the Linux counterpart is the `hypr` package (Hyprland), which mirrors the same keybindings |
 | `shortcat`, `krisp`, `freedom` | no Linux build |
 | `claude` (cask) | no official Linux desktop app |
 | `font-iosevka-*` casks | replaced by the Nerd Fonts release tarballs above |

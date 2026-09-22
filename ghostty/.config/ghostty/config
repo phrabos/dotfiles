@@ -7,7 +7,7 @@ window-decoration = auto
 bell-features = false
 
 # Opacity and blur
-background-opacity = 0.8
+background-opacity = 0.65
 background-blur-radius = 10
 
 # Font
@@ -33,3 +33,10 @@ keybind = super+alt+left=unbind
 keybind = super+alt+right=unbind
 keybind = super+alt+up=unbind
 keybind = super+alt+down=unbind
+
+# Zellij binds Ctrl+Shift+h/j/k/l to move focus between panes, but Ghostty
+# claims ctrl+shift+j by default for write_screen_file:paste (dump the screen
+# to a temp file and paste its path). Ghostty is the outer layer, so it won
+# and only "down" appeared broken while h/k/l worked - those three are unbound
+# in Ghostty and passed straight through.
+keybind = ctrl+shift+j=unbind
