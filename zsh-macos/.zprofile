@@ -1,6 +1,6 @@
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # ─── PATH ─────────────────────────────────────────────────────────────────────
-# Login-shell-only, so zellij panes don't re-prepend on every new pane.
-
-export PATH="$HOME/.local/bin:$PATH"                  # claude, pre-commit (uv tools)
+# ~/.local/bin moved to ~/.zshenv (shared), so it applies to non-login shells
+# too. The .zshenv version is guarded against duplicate prepending, which was
+# the reason this was login-shell-only.

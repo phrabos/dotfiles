@@ -1,7 +1,6 @@
 # ─── PATH ─────────────────────────────────────────────────────────────────────
-# Login-shell-only, so zellij panes don't re-prepend on every new pane.
-#
-# ~/.local/bin holds uv tools (claude, pre-commit) and the Debian name shims
-# (bat -> batcat, fd -> fdfind), so it must come before /usr/bin.
-
-export PATH="$HOME/.local/bin:$PATH"
+# ~/.local/bin moved to ~/.zshenv. It was here, login-shell-only, which meant a
+# terminal under a Wayland session (Hyprland) never got it: GDM sources
+# ~/.profile for X11 sessions but exec's Wayland sessions directly. The .zshenv
+# version is guarded, so the original concern -- zellij panes re-prepending on
+# every new pane -- cannot happen there either.

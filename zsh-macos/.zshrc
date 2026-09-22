@@ -121,6 +121,9 @@ cx() {
 
 eval "$(starship init zsh)"
 
+# Semantic prompt marks for Zellij scroll mode; must follow starship init.
+source ~/.config/zsh/osc133.zsh
+
 # ─── Shell History (Atuin) ────────────────────────────────────────────────────
 # Binds up-arrow and ^R.
 

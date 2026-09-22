@@ -13,6 +13,25 @@ case ":$PATH:" in
 esac
 unset MISE_SHIMS
 
+# ─── ~/.local/bin ─────────────────────────────────────────────────────────────
+# Release binaries (starship, atuin, zellij, mise, uv, carapace, wt) and the
+# Debian name shims (bat -> batcat, fd -> fdfind) live here, so it must come
+# before /usr/bin.
+#
+# This lives in .zshenv rather than .zprofile because .zprofile is read by
+# LOGIN shells only. GDM sources ~/.profile for X11 sessions (which is how XFCE
+# picked this up) but Wayland sessions are exec'd directly and never source it,
+# so a terminal under Hyprland got a PATH without this and every tool below
+# silently vanished. Same guard as the mise block: subshells and zellij panes
+# cannot stack duplicate entries.
+
+LOCAL_BIN="$HOME/.local/bin"
+case ":$PATH:" in
+  *":$LOCAL_BIN:"*) ;;
+  *) [ -d "$LOCAL_BIN" ] && export PATH="$LOCAL_BIN:$PATH" ;;
+esac
+unset LOCAL_BIN
+
 # ─── corepack ─────────────────────────────────────────────────────────────────
 # Skip the y/n download prompt, which otherwise hangs CI, scripts, and editor
 # tasks the first time a project's pinned pnpm/yarn version isn't cached.

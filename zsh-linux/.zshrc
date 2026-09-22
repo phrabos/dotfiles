@@ -26,7 +26,7 @@ setopt EXTENDED_HISTORY       # record timestamp + duration per entry
 
 # ─── mise (runtime version manager) ──────────────────────────────────────────
 
-eval "$(mise activate zsh)"
+# eval "$(mise activate zsh)"
 
 # ─── Plugins (Antidote) ──────────────────────────────────────────────────────
 
@@ -109,6 +109,7 @@ alias zshrcs="source ~/.zshrc"
 alias weather="curl -4 wttr.in"     # append /<city> to override IP geolocation
 alias myip4="xh -4b icanhazip.com"
 alias myip6="xh -6b icanhazip.com"
+alias speedtest="librespeed-cli"   # FOSS up/down/ping test (LibreSpeed)
 
 # Worktree
 alias wtc='wt switch --create --execute="claude --dangerously-skip-permissions"'
@@ -124,6 +125,9 @@ cx() {
 
 eval "$(starship init zsh)"
 
+# Semantic prompt marks for Zellij scroll mode; must follow starship init.
+source ~/.config/zsh/osc133.zsh
+
 # ─── Shell History (Atuin) ────────────────────────────────────────────────────
 # Binds up-arrow and ^R.
 
@@ -138,3 +142,8 @@ fi
 
 # direnv - per-directory environment variables
 eval "$(direnv hook zsh)"
+
+# --- HTB: wpscan with API token pulled from pass (no secrets in history) ---
+# One-time setup: pass insert htb/wpscan-api-token
+# Usage: just run `wpscan --url ...` — token is injected automatically.
+wpscan() { command wpscan "$@" --api-token "$(pass show htb/wpscan-api-token)"; }
