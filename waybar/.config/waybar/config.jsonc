@@ -182,7 +182,14 @@
   "clock": {
     "format": "{:%A %H:%M}",
     "format-alt": "{:%d %B  W%V  %Y}",
-    "tooltip-format": "<tt><small>{calendar}</small></tt>"
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      // Today as a mauve block with base-coloured text. Pango markup has no
+      // rounded backgrounds, so a circle isn't possible here.
+      "format": {
+        "today": "<span background='#cba6f7' foreground='#1e1e2e'><b>{}</b></span>"
+      }
+    }
   },
 
   // Tray in a drawer, as Omarchy's group/tray-expander: only the chevron
