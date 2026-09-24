@@ -453,13 +453,18 @@ bind("SUPER + K", "Keybinding cheat sheet", hl.dsp.exec_cmd("hypr-keybinds"))
 -- instead, which works on anything. It fades the whole window, text included,
 -- and multiplies with Ghostty's own background-opacity. Per window; state is
 -- forgotten when the window closes or the config reloads.
-local translucent_opacity = "0.85"
--- Classes that open translucent (the browsers-ws2 window rule below applies
--- translucent_opacity to them), so the first press makes them solid.
+local translucent_opacity = "0.75"
+-- Classes that open translucent (the browsers-ws2, obsidian-ws5 and
+-- discord-ws8 window rules below apply translucent_opacity to them), so the
+-- first press makes them solid.
 local translucent_by_default = {
     ["firefox-esr"]   = true,
     ["brave-browser"] = true,
     ["google-chrome"] = true,
+    ["md.obsidian.Obsidian"] = true,
+    ["obsidian"]             = true,
+    ["discord"]              = true,
+    ["Discord"]              = true,
 }
 -- Per-window state once toggled; nil means "still at the class default".
 local translucent_windows = {}
@@ -646,11 +651,13 @@ hl.window_rule({
     opacity   = translucent_opacity,
 })
 
--- Workspace 5 - Obsidian (the CWES vault)
+-- Workspace 5 - Obsidian (the CWES vault). Translucent by default, like the
+-- browsers; keep in sync with translucent_by_default.
 hl.window_rule({
     name  = "obsidian-ws5",
     match = { class = [[^(obsidian|md\.obsidian\.Obsidian)$]] },
     workspace = 5,
+    opacity   = translucent_opacity,
 })
 
 -- Workspace 6 - dev/security tooling. On macOS this was Postman, pgAdmin and
@@ -670,10 +677,13 @@ hl.window_rule({
 
 -- Workspace 8 - chat. On macOS this slot is Slack; Slack has no Linux install
 -- here yet, so Discord takes it. If Slack arrives later it belongs here too.
+-- Translucent by default, like the browsers; keep in sync with
+-- translucent_by_default.
 hl.window_rule({
     name  = "discord-ws8",
     match = { class = [[^(discord|Discord)$]] },
     workspace = 8,
+    opacity   = translucent_opacity,
 })
 
 -- Workspace 10 - keyboard config (AeroSpace's workspace 0)
