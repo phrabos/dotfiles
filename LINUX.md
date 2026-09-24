@@ -556,9 +556,16 @@ mkdir -p ~/.local/share/vicinae && stow vicinae
 
 `hyprland.lua` autostarts `vicinae server`; the bind only runs `vicinae toggle`.
 The `vicinae` package carries `settings.json` (theme, telemetry off, files in
-root search, close on focus loss) and a `catppuccin-mocha-mauve` theme - the
+root search) and a `catppuccin-mocha-mauve` theme - the
 bundled Catppuccin Mocha with the mauve accent instead of blue. Vicinae writes
 settings changes made in its GUI back to `settings.json`, i.e. into the repo.
+
+`close_on_focus_loss` is off (Vicinae's own default). With Hyprland's
+focus-follows-mouse and the layer shell's `on_demand` keyboard mode, crossing
+any window on the way to a Vicinae menu took focus and closed it; the power
+menu's `vicinae dmenu` client was then never answered and hung. Esc or
+`Super+Space` closes Vicinae. `exclusive` keyboard mode would also avoid it,
+but Vicinae warns it breaks mouse use in popups on Hyprland.
 On first start it also drops browser native-messaging manifests into the
 Chrome/Chromium/Brave config dirs for its optional browser extension.
 
