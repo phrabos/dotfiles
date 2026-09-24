@@ -288,7 +288,112 @@ sudo apt install -y hyprland hyprpaper hyprlock hypridle hyprshutdown \
 ```
 
 Note `hyprland-qtutils` is a transitional package — install `hyprland-guiutils`.
-`mako` has no candidate in Kali, so the notification daemon is **dunst**.
+`mako` has no candidate in Kali, so the notification daemon is **swaync**
+(SwayNotificationCenter, package `sway-notification-center`, 0.12.6 at the time
+of writing). It replaced dunst: same popups, plus a control-center panel with
+history, Do Not Disturb, media controls, volume and brightness sliders and
+Wi-Fi / Bluetooth / mic toggles.
+
+- `SUPER+N` opens the panel (so does the waybar bell), `SUPER+SHIFT+N`
+  toggles Do Not Disturb, `SUPER+CTRL+N` dismisses the newest popup.
+  Right-clicking the bell also toggles Do Not Disturb.
+- `hyprland.lua` starts `swaync` directly. Do not rely on its systemd unit,
+  which is `PartOf=graphical-session.target`, a target this session never
+  starts.
+- Config is `swaync/.config/swaync/`. `config.json` is validated by
+  `/etc/xdg/swaync/configSchema.json`: point a JSON language server at it via
+  the `$schema` key. `style.css` is layered over the packaged
+  `/etc/xdg/swaync/style.css` and mostly just overrides its CSS variables.
+- Apply edits without a restart: `swaync-client -R` (config) and
+  `swaync-client -rs` (CSS). Debug with `GTK_DEBUG=interactive swaync --replace`.
+- The quick-settings buttons call `~/.local/bin/swaync-toggle`.
+
+Once swaync is running, remove dunst so its D-Bus service file stops competing
+for `org.freedesktop.Notifications`:
+
+```bash
+sudo apt purge -y dunst
+```
+
+### Sleep, hibernate and the power menu
+
+Same model as Omarchy v3: the lid **suspends**, and **Hibernate is manual**.
+Pick it from the power menu before the laptop goes in a bag.
+
+Why not `suspend-then-hibernate`: this laptop (T14s Gen 2i) only has s2idle
+suspend, and the RTC alarm cannot wake it from s2idle to do the hibernate half
+without the `rtc_cmos.use_acpi_alarm=1` kernel parameter. It sat in s2idle
+until the battery died and cold-booted, losing the session: 09-16, 09-17 and
+09-19 in the journal, about a day from 100% each time. Omarchy dropped
+suspend-then-hibernate for the same reason ("stuck in a suspend-wake-up loop"
+on too many laptops).
+
+| Situation | What happens | Configured in |
+|---|---|---|
+| Idle 2.5 / 5 / 5.5 min | dim, lock, screen off | `hypr/hypridle.conf` |
+| Idle 60 min on battery | hibernate (safety net; nothing on AC) | `hypr/hypridle.conf` |
+| Any sleep | locks first, sleep waits for the lock | `hypr/hypridle.conf` |
+| Lid closed on battery | suspend (drains in ~1 day) | `system/…/logind.conf.d/10-power.conf` |
+| Lid closed on AC / docked | nothing | same |
+| Power button (running) | power menu | same + `hyprland.lua` |
+| Power button (off / hibernated) | powers on (firmware) | — |
+| Battery 20% / 10% | waybar warnings | `waybar/config.jsonc` |
+| Battery 5% while awake | hibernate | `system/…/UPower.conf.d/50-hibernate.conf` |
+
+The power menu (`~/.local/bin/power-menu`, a Vicinae list) opens from the power
+button, `CTRL+ALT+Delete`, the waybar ⏻ chip and the swaync power button.
+
+Hibernate resumes from the existing 10.3 GB swap partition
+(`RESUME=UUID=…` in `/etc/initramfs-tools/conf.d/resume`, from the
+installer). That is enough even with 15 GB of RAM: the kernel shrinks the
+image to about `/sys/power/image_size` (2/5 of RAM) and LZO-compresses it as
+it writes. No swapfile: resuming from a swap *file* on initramfs-tools needs
+`resume_offset=` on the kernel command line.
+
+Install the system files (`system/` is never stowed: these are root-owned):
+
+```bash
+sudo install -Dm644 system/etc/systemd/logind.conf.d/10-power.conf \
+  /etc/systemd/logind.conf.d/10-power.conf
+sudo rm -f /etc/systemd/logind.conf.d/10-lid-hibernate.conf
+sudo install -Dm644 system/etc/UPower/UPower.conf.d/50-hibernate.conf \
+  /etc/UPower/UPower.conf.d/50-hibernate.conf
+
+sudo systemctl reload systemd-logind   # re-reads config; never *restart* it, that ends the session
+sudo systemctl restart upower
+```
+
+Then test hibernate once with your usual apps open: `systemctl hibernate`,
+press the power button, and check the session comes back.
+
+### Theming beyond the config files
+
+Everything is Catppuccin Mocha with a mauve accent (mauve -> pink on focused
+borders). Most of it is in stowed packages; these pieces need packages or
+root:
+
+```bash
+# Volume / brightness / media-key popup, and Hyprland's polkit agent
+# (replaces the MATE agent; a Qt 6 app, so the qt package themes it).
+sudo apt install -y swayosd hyprpolkitagent
+
+# Qt 6 apps (Wireshark): the `qt` stow package holds qt6ct.conf and the
+# official catppuccin/qt5ct colour scheme. hyprland.lua already sets
+# QT_QPA_PLATFORMTHEME=qt6ct. qt6ct rewrites its conf on Apply - the
+# dotfiles copy is canonical.
+stow qt swayosd
+
+# Mauve folder icons: catppuccin/papirus-folders + Papirus's own script.
+git clone --depth 1 https://github.com/catppuccin/papirus-folders.git
+curl -LO https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-folders/master/papirus-folders
+chmod +x papirus-folders
+sudo cp -r papirus-folders/src/* /usr/share/icons/Papirus/
+sudo ./papirus-folders -C cat-mocha-mauve --theme Papirus-Dark
+```
+
+A `papirus-icon-theme` upgrade can reset the folders to blue; re-run the last
+line. SwayOSD's brightness control writes `/sys/class/backlight` directly,
+which works because this user is in the `video` group.
 
 ### Window switcher — hyprshell
 

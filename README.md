@@ -37,7 +37,7 @@ git clone git@github.com:phrabos/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
 brew bundle --file=./Brewfile     # 3 taps, 43 formulae, 26 casks
-stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|dunst|gtk)/')
+stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|swaync|swayosd|qt|gtk|system)/')
 
 # Third-party taps require explicit trust before Homebrew will load them
 brew trust --cask nikitabobko/tap/aerospace
@@ -61,14 +61,14 @@ cd ~/dotfiles
 mkdir -p ~/.config/kali-shell-defaults.bak
 mv ~/.zshrc ~/.zprofile ~/.config/kali-shell-defaults.bak/ 2>/dev/null
 
-stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace)/')
+stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace|system)/')
 
 # Antidote is not packaged in Debian.
 git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
 ```
 
 `aerospace` is a macOS window manager; skip it. Its Linux counterpart is the
-`hypr` package (plus `waybar` and `dunst`), which mirrors the AeroSpace
+`hypr` package (plus `waybar` and `swaync`), which mirrors the AeroSpace
 keybindings under Hyprland. See [LINUX.md](LINUX.md) for the
 package-by-package translation of the Brewfile and the tools that need a
 vendor repo or release binary.
@@ -99,8 +99,8 @@ stow -R <package>   # restow, after renaming files
 stow -n -v <pkg>    # dry run, shows every link without making one
 
 # link all — note the platform exclusion, see "Platform split" above
-stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|dunst|gtk)/')    # macOS
-stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace)/')           # Linux
+stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|swaync|swayosd|qt|gtk|system)/')    # macOS
+stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace|system)/')           # Linux
 ```
 
 Use `$(...)` and not a shell variable: zsh does not word-split unquoted
@@ -121,8 +121,11 @@ into the matching package here first, then stow.
 | `aerospace` | `.aerospace.toml` (macOS only) |
 | `hypr` | `.config/hypr/` (Linux only) |
 | `waybar` | `.config/waybar/` (Linux only) |
-| `dunst` | `.config/dunst/dunstrc` (Linux only) |
+| `swaync` | `.config/swaync/` (Linux only) |
+| `system` | **not stowed**: root-owned files under `/etc`, installed with `sudo install` (Linux only, see LINUX.md) |
 | `gtk` | `.config/gtk-3.0/`, `.config/gtk-4.0/` (Linux only) |
+| `qt` | `.config/qt6ct/` - Catppuccin palette for Qt 6 apps (Linux only) |
+| `swayosd` | `.config/swayosd/` - volume / brightness popup (Linux only) |
 | `nvim` | `.config/nvim/` (LazyVim) |
 | `zellij` | `.config/zellij/` |
 | `ghostty` | `.config/ghostty/` |
