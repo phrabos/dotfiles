@@ -19,6 +19,14 @@
 
 PATH="$HOME/.local/bin:$PATH"
 
+# Run a command as a child of Hyprland rather than of whatever opened this
+# menu. hyprshutdown started from the waybar chip or the swaync button (their
+# child) closes the apps, then hangs on a blank screen without exiting
+# Hyprland; from a Hyprland keybind it works (hyprwm/hyprshutdown#15).
+via_hyprland() {
+    logger -t power-menu "dispatch: $1 -> $(hyprctl dispatch "hl.dsp.exec_cmd('$1')" 2>&1)"
+}
+
 # One menu at a time. A second power-button press while the menu is open
 # used to stack a second menu on top of the first; now it does nothing.
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/power-menu.lock"
@@ -37,12 +45,14 @@ choice=$(printf '%s\n' \
         --no-section --no-quick-look --no-footer \
         --height 360)
 
+logger -t power-menu "picked: ${choice:-<nothing>} (menu exit $?)"
+
 case "$choice" in
     *Lock)      loginctl lock-session ;;
     *Suspend)   systemctl suspend ;;
     *Hibernate) systemctl hibernate ;;
-    *"Log out") hyprshutdown -t "Logging out..." ;;
-    *Reboot)    hyprshutdown -t "Rebooting..." -p "systemctl reboot" ;;
-    *"Shut down") hyprshutdown -t "Shutting down..." -p "systemctl poweroff" ;;
+    *"Log out") via_hyprland 'hyprshutdown -t "Logging out..."' ;;
+    *Reboot)    via_hyprland 'hyprshutdown -t "Rebooting..." -p "systemctl reboot"' ;;
+    *"Shut down") via_hyprland 'hyprshutdown -t "Shutting down..." -p "systemctl poweroff"' ;;
     *) exit 0 ;;  # Escape / nothing picked
 esac

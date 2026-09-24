@@ -238,6 +238,9 @@
   "custom/power": {
     "format": "⏻",
     "tooltip": false,
-    "on-click": "power-menu"
+    // On release, not press: opened on press, the menu gets the button
+    // release on waybar, loses focus and Vicinae (close_on_focus_loss)
+    // closes it at once.
+    "on-click-release": "power-menu"
   }
 }

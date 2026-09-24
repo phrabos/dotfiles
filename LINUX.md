@@ -342,6 +342,12 @@ on too many laptops).
 
 The power menu (`~/.local/bin/power-menu`, a Vicinae list) opens from the power
 button, `CTRL+ALT+Delete`, the waybar ⏻ chip and the swaync power button.
+Log out / reboot / shut down run `hyprshutdown` through
+`hyprctl dispatch "hl.dsp.exec_cmd(...)"`, so it is Hyprland's child whichever
+of these opened the menu: started as a child of waybar or swaync it closed
+the apps and then sat on a blank screen
+([hyprshutdown#15](https://github.com/hyprwm/hyprshutdown/issues/15)). The
+menu logs the choice and Hyprland's reply: `journalctl -t power-menu`.
 
 Hibernate resumes from the existing 10.3 GB swap partition
 (`RESUME=UUID=…` in `/etc/initramfs-tools/conf.d/resume`, from the
