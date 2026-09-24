@@ -1,0 +1,48 @@
+#!/bin/sh
+# power-menu - lock / suspend / hibernate / log out / reboot / shut down.
+#
+# Opened by the power button (logind hands it to Hyprland, see
+# system/logind.conf.d/), CTRL+ALT+Delete, the waybar power chip and the
+# swaync power button. Same shape as Omarchy's system menu.
+#
+# Hibernate is the one to pick before the laptop goes in a bag: closing the
+# lid only suspends, and suspend on this machine drains a full battery in
+# about a day. Hibernate writes the session to swap and powers off; the power
+# button then boots straight back into it.
+#
+# The picker is Vicinae's dmenu mode, as in ~/.local/bin/wallpaper, so it
+# carries the Catppuccin theme; hyprlauncher -m works too but is unthemed.
+#
+# Log out / reboot / shut down go through hyprshutdown, which asks every app
+# to close cleanly (so browsers and editors save state) before Hyprland exits
+# and the --post-cmd runs.
+
+PATH="$HOME/.local/bin:$PATH"
+
+# One menu at a time. A second power-button press while the menu is open
+# used to stack a second menu on top of the first; now it does nothing.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/power-menu.lock"
+flock -n 9 || exit 0
+
+choice=$(printf '%s\n' \
+    "󰌾  Lock" \
+    "󰒲  Suspend" \
+    "󰤄  Hibernate" \
+    "󰍃  Log out" \
+    "󰜉  Reboot" \
+    "󰐥  Shut down" |
+    vicinae dmenu \
+        --navigation-title "Power" \
+        --placeholder "Lock, suspend, hibernate..." \
+        --no-section --no-quick-look --no-footer \
+        --height 360)
+
+case "$choice" in
+    *Lock)      loginctl lock-session ;;
+    *Suspend)   systemctl suspend ;;
+    *Hibernate) systemctl hibernate ;;
+    *"Log out") hyprshutdown -t "Logging out..." ;;
+    *Reboot)    hyprshutdown -t "Rebooting..." -p "systemctl reboot" ;;
+    *"Shut down") hyprshutdown -t "Shutting down..." -p "systemctl poweroff" ;;
+    *) exit 0 ;;  # Escape / nothing picked
+esac

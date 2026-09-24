@@ -391,9 +391,17 @@ bind("XF86AudioPrev",  "Previous track", hl.dsp.exec_cmd("playerctl previous"), 
 -- so hypridle's before_sleep_cmd and this bind go through the same path.
 bind("SUPER + L", "Lock screen", hl.dsp.exec_cmd("loginctl lock-session"))
 
--- Logout / shutdown dialog (was xfce4-session-logout). Also on the waybar
--- power button, kept because it is close to a universal reflex.
-bind("CTRL + ALT + Delete", "Logout / shutdown menu", hl.dsp.exec_cmd("hyprshutdown"))
+-- Power menu: lock / suspend / hibernate / log out / reboot / shut down (see
+-- ~/.local/bin/power-menu). Replaces the xfce4-session-logout dialog; also on
+-- the waybar power chip and the swaync power button.
+--
+-- The physical power button opens it too, as Omarchy's does. That needs
+-- logind to leave the key alone - HandlePowerKey=ignore in
+-- system/logind.conf.d/ - otherwise logind powers off before Hyprland sees
+-- the key. Only affects a running system: from off or hibernated, the button
+-- is the firmware's and powers on as usual; holding it still forces off.
+bind("CTRL + ALT + Delete", "Power menu", hl.dsp.exec_cmd("power-menu"))
+bind("XF86PowerOff",        "Power menu", hl.dsp.exec_cmd("power-menu"))
 
 -- xkill equivalent: the next window you click is killed; Escape backs out. For
 -- a hung window that ignores ALT+SHIFT+Q (a polite close request). Killing
