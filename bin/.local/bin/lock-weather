@@ -1,0 +1,66 @@
+#!/bin/sh
+# lock-weather - one short line for the hyprlock weather label: icon + temp.
+#
+#   󰖐  58°F  Overcast
+#
+# Source is wttr.in (as Omarchy's weather widget), located by the request's
+# public IP. Deliberately NOT shown: the place name (%l) - a lock screen should
+# not say where the laptop is.
+#
+# IP lookup follows whatever carries the request: HTB's OpenVPN only routes
+# the lab ranges, so it does not move you, but a full-tunnel VPN (ProtonVPN,
+# a Tailscale exit node) makes this the weather at the VPN's exit. To pin a
+# place instead, put it in ~/.config/lock-weather/location (a city, "Boston",
+# or a US ZIP) - kept OUT of the dotfiles on purpose, the repo is public.
+# LOCK_WEATHER_LOCATION in the environment overrides the file.
+#
+# Never blocks the lock screen for long: 4 s timeout, and the last good answer
+# is cached, so offline (or on the train) it shows the last reading, up to
+# 3 h old, then nothing.
+
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/lock-weather"
+max_age=10800
+
+loc_file="${XDG_CONFIG_HOME:-$HOME/.config}/lock-weather/location"
+location=${LOCK_WEATHER_LOCATION:-}
+[ -z "$location" ] && [ -f "$loc_file" ] && location=$(head -n 1 "$loc_file")
+location=$(printf '%s' "$location" | sed 's/^ *//; s/ *$//; s/ /+/g')
+# %C condition text, %t temperature; ?u = US units (°F), m for metric.
+raw=$(curl -fsS --max-time 4 "https://wttr.in/${location}?format=%C|%t&u" 2>/dev/null)
+
+case "$raw" in
+    *"|"*)
+        condition=$(printf '%s' "${raw%%|*}" | sed 's/[[:space:]]*$//')
+        temp=${raw#*|}
+        temp=${temp#+}
+
+        hour=$(date +%-H)
+        night=false
+        [ "$hour" -lt 6 ] || [ "$hour" -ge 19 ] && night=true
+
+        lc=$(printf '%s' "$condition" | tr 'A-Z' 'a-z')
+        case "$lc" in
+            *thunder*)                          icon="󰖓" ;;
+            *snow*|*blizzard*|*sleet*|*ice*)    icon="󰖘" ;;
+            *heavy*rain*|*torrential*)          icon="󰖖" ;;
+            *rain*|*drizzle*|*shower*)          icon="󰖗" ;;
+            *fog*|*mist*|*haze*)                icon="󰖑" ;;
+            *partly*)                           icon="󰖕" ;;
+            *overcast*|*cloud*)                 icon="󰖐" ;;
+            *clear*|*sunny*)
+                if $night; then icon="󰖔"; else icon="󰖙"; fi ;;
+            *)                                  icon="󰔏" ;;
+        esac
+
+        line="$icon  $temp  $condition"
+        mkdir -p "$(dirname "$cache")"
+        printf '%s\n' "$line" > "$cache"
+        printf '%s\n' "$line"
+        ;;
+    *)
+        # Offline or wttr.in down: last good reading if it is recent enough.
+        if [ -f "$cache" ] && [ $(( $(date +%s) - $(stat -c %Y "$cache") )) -lt $max_age ]; then
+            cat "$cache"
+        fi
+        ;;
+esac

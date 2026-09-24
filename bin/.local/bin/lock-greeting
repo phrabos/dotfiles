@@ -1,0 +1,14 @@
+#!/bin/sh
+# lock-greeting - time-of-day greeting for the hyprlock label. No username:
+# a lock screen should not tell a passer-by whose laptop it is.
+# Lives in a script because hyprlock's config language reserves $name for its
+# own variables, so shell $vars inline in a label are fragile.
+
+h=$(date +%-H)
+if [ "$h" -lt 5 ] || [ "$h" -ge 18 ]; then
+    echo "Good evening"
+elif [ "$h" -lt 12 ]; then
+    echo "Good morning"
+else
+    echo "Good afternoon"
+fi

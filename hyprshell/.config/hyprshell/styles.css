@@ -1,0 +1,38 @@
+/* hyprshell - Catppuccin Mocha, mauve accent, matching hyprland.lua's
+ * borders, waybar, swaync and hyprtoolkit.conf.
+ *
+ * hyprshell draws with its own GTK 4 CSS (not hyprtoolkit), read from this
+ * file and hot-reloaded on save. Without it the switcher uses its built-in
+ * palette: a grey-blue frame and a red border on the selected window.
+ *
+ * Only the :root variables are overridden, which is how hyprshell's docs and
+ * its bundled themes do it (docs/CONFIGURE.md, docs/css-examples/ at
+ * v4.10.8). Every class in the app falls back to these, so this covers the
+ * whole switcher. `hyprshell config generate` prints every class if more is
+ * ever needed. */
+
+:root {
+    /* Selected window: mauve, as Hyprland's active border. Others: surface1,
+     * as Hyprland's inactive border. */
+    --border-color: rgba(69, 71, 90, 1);          /* surface1 */
+    --border-color-active: rgba(203, 166, 247, 1); /* mauve */
+
+    /* Window tiles, and the backdrop behind them. 0.8 alpha as ghostty,
+     * waybar and swaync. */
+    --bg-color: rgba(49, 50, 68, 0.8);        /* surface0 */
+    --bg-color-hover: rgba(69, 71, 90, 0.9);  /* surface1 */
+    --bg-window-color: rgba(30, 30, 46, 0.8); /* base */
+
+    --text-color: rgba(205, 214, 244, 1);     /* text */
+
+    /* Hyprland: rounding 8, border_size 2. */
+    --border-radius: 8px;
+    --border-size: 2px;
+    --border-style: solid;
+
+    --window-padding: 2px;
+}
+
+.window {
+    font-family: "IosevkaTerm Nerd Font Propo", "IosevkaTerm Nerd Font Mono", monospace;
+}

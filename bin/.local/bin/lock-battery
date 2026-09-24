@@ -1,0 +1,25 @@
+#!/bin/sh
+# lock-battery - battery for the hyprlock label: icon + percent, same icon set
+# as waybar's battery module (ten steps, plus a charging icon).
+#
+#   󰂀  74%        󰂄  74%  (charging)
+#
+# Prints nothing on a machine without a battery.
+
+bat=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -n 1)
+[ -n "$bat" ] || exit 0
+
+capacity=$(cat "$bat/capacity")
+status=$(cat "$bat/status")
+
+if [ "$status" = Charging ]; then
+    icon="󰂄"
+else
+    # 0-9 -> 󰁺 ... 90-100 -> 󰁹
+    set -- 󰁺 󰁻 󰁼 󰁽 󰁾 󰁿 󰂀 󰂁 󰂂 󰁹
+    i=$(( capacity / 10 + 1 ))
+    [ "$i" -gt 10 ] && i=10
+    eval "icon=\${$i}"
+fi
+
+printf '%s  %s%%\n' "$icon" "$capacity"

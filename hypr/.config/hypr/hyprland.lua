@@ -185,8 +185,12 @@ hl.config({
 
         border_size = 2,
 
+        -- Focused window: mauve -> pink at 45deg, the same pair as the lock
+        -- screen clock, so the two accents recur across the desktop. A
+        -- static angle - the "loop" borderangle style re-renders every
+        -- frame forever (wiki warning), which costs battery.
         col = {
-            active_border   = "rgba(cba6f7ff)", -- mauve
+            active_border   = { colors = { "rgba(cba6f7ff)", "rgba(f5c2e7ff)" }, angle = 45 }, -- mauve, pink
             inactive_border = "rgba(45475aff)", -- surface1
         },
 
@@ -196,6 +200,13 @@ hl.config({
 
     decoration = {
         rounding = 8,
+
+        -- Dim unfocused windows so the focused one stands out alongside its
+        -- gradient border. 0.15, not the default 0.5, which reads as
+        -- "disabled" rather than "not focused". The fade between states
+        -- follows the fade animation (fadeDim inherits it).
+        dim_inactive = true,
+        dim_strength = 0.15,
 
         -- ghostty runs at background-opacity 0.8 with blur; matching the
         -- compositor blur keeps it looking as it does on macOS.
@@ -209,6 +220,36 @@ hl.config({
             enabled = true,
             range   = 12,
             color   = 0xaa11111b, -- crust
+        },
+    },
+
+    -- Tabbed groups (ALT+A). Hyprland's defaults are translucent yellow
+    -- borders and orange for locked groups; these follow the window borders
+    -- instead, with the tab bar in the same mauve / surface pair as waybar's
+    -- workspace buttons. Locked groups get peach so they still read as
+    -- different.
+    group = {
+        col = {
+            border_active          = { colors = { "rgba(cba6f7ff)", "rgba(f5c2e7ff)" }, angle = 45 },
+            border_inactive        = "rgba(45475aff)",
+            border_locked_active   = "rgba(fab387ff)", -- peach
+            border_locked_inactive = "rgba(fab38766)",
+        },
+        groupbar = {
+            font_family          = "IosevkaTerm Nerd Font Propo",
+            font_size            = 11,
+            height               = 18,
+            gradients            = true,
+            rounding             = 6,
+            indicator_height     = 0,
+            text_color           = "rgba(1e1e2eff)", -- base, on the mauve tab
+            text_color_inactive  = "rgba(cdd6f4ff)", -- text
+            col = {
+                active          = "rgba(cba6f7ff)",
+                inactive        = "rgba(313244ff)", -- surface0
+                locked_active   = "rgba(fab387ff)",
+                locked_inactive = "rgba(313244ff)",
+            },
         },
     },
 
@@ -260,11 +301,31 @@ hl.config({
 
 hl.config({ animations = { enabled = true } })
 
+-- Animations. speed is in deciseconds (4 = 400ms). Leaves inherit from their
+-- parent, so only the ones that should differ are set. Tree and styles:
+-- https://wiki.hypr.land/Configuring/Animations/
 hl.curve("smooth", { type = "bezier", points = { { 0.05, 0.9 }, { 0.1, 1.0 } } })
+hl.curve("ease",   { type = "bezier", points = { { 0.25, 0.1 }, { 0.25, 1.0 } } })
 
-hl.animation({ leaf = "windows",    enabled = true, speed = 4, bezier = "smooth" })
-hl.animation({ leaf = "fade",       enabled = true, speed = 4, bezier = "smooth" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "smooth" })
+-- Windows grow in from 85% and shrink out, rather than the default slide.
+hl.animation({ leaf = "windows",     enabled = true, speed = 4, bezier = "smooth", style = "popin 85%" })
+hl.animation({ leaf = "windowsOut",  enabled = true, speed = 3, bezier = "smooth", style = "popin 85%" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 4, bezier = "smooth" })
+
+-- Layers: waybar, the swaync panel, Vicinae, hyprlauncher, hyprshell. A
+-- fade rather than a slide - swaync animates its own popups, and a
+-- compositor slide on top of that doubles up.
+hl.animation({ leaf = "layers",      enabled = true, speed = 3, bezier = "ease", style = "fade" })
+
+hl.animation({ leaf = "fade",        enabled = true, speed = 4, bezier = "smooth" })
+-- Menus and tooltips (Wayland popups) should feel instant.
+hl.animation({ leaf = "fadePopups",  enabled = true, speed = 2, bezier = "ease" })
+
+-- Border colour cross-fades as focus moves, instead of snapping.
+hl.animation({ leaf = "border",      enabled = true, speed = 5, bezier = "ease" })
+
+-- Workspaces slide with a fade, over 15% of the screen rather than all of it.
+hl.animation({ leaf = "workspaces",  enabled = true, speed = 4, bezier = "smooth", style = "slidefade 15%" })
 
 ---------------------
 ---- KEYBINDINGS ----
@@ -356,24 +417,28 @@ bind(mainMod .. " + mouse:273", "Drag to resize window", hl.dsp.window.resize(),
 -- the OS, so there was nothing to port and I originally left them out.
 --   locked    = still work when hyprlock has the screen
 --   repeating = hold the key to keep stepping
--- Volume uses wpctl (wireplumber, already installed). The -l 1 on raise caps
--- it at 100% so the key cannot push into amplified territory.
-bind("XF86AudioRaiseVolume",  "Volume up",       hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
-bind("XF86AudioLowerVolume",  "Volume down",     hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
-bind("XF86AudioMute",         "Mute",            hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true })
-bind("XF86AudioMicMute",      "Mute microphone", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true })
+--
+-- All through swayosd-client, which makes the change AND shows the themed
+-- popup (~/.config/swayosd/). Volume steps 5% and is capped at 100% by the
+-- server's max_volume, as the old `wpctl -l 1` was. Brightness keeps a 5%
+-- floor (min_brightness) so it never reaches black.
+bind("XF86AudioRaiseVolume",  "Volume up",       hl.dsp.exec_cmd("swayosd-client --output-volume +5"),        { locked = true, repeating = true })
+bind("XF86AudioLowerVolume",  "Volume down",     hl.dsp.exec_cmd("swayosd-client --output-volume -5"),        { locked = true, repeating = true })
+bind("XF86AudioMute",         "Mute",            hl.dsp.exec_cmd("swayosd-client --output-volume mute-toggle"), { locked = true })
+bind("XF86AudioMicMute",      "Mute microphone", hl.dsp.exec_cmd("swayosd-client --input-volume mute-toggle"),  { locked = true })
 
--- Brightness needs brightnessctl (not installed yet); the backlight device is
--- intel_backlight. -e4 gives perceptually even steps, -n2 stops it reaching 0.
-bind("XF86MonBrightnessUp",   "Brightness up",   hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"), { locked = true, repeating = true })
-bind("XF86MonBrightnessDown", "Brightness down", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"), { locked = true, repeating = true })
+-- intel_backlight is writable by the video group, which this user is in, so
+-- SwayOSD needs no extra udev setup here.
+bind("XF86MonBrightnessUp",   "Brightness up",   hl.dsp.exec_cmd("swayosd-client --brightness +5"), { locked = true, repeating = true })
+bind("XF86MonBrightnessDown", "Brightness down", hl.dsp.exec_cmd("swayosd-client --brightness -5"), { locked = true, repeating = true })
 
--- Media transport (playerctl). Play and Pause are separate keysyms; both go to
--- play-pause so whichever your keyboard emits behaves the same.
-bind("XF86AudioPlay",  "Play/pause",     hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-bind("XF86AudioPause", "Play/pause",     hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-bind("XF86AudioNext",  "Next track",     hl.dsp.exec_cmd("playerctl next"),       { locked = true })
-bind("XF86AudioPrev",  "Previous track", hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
+-- Media transport. Play and Pause are separate keysyms; both go to
+-- play-pause so whichever your keyboard emits behaves the same. The popup
+-- shows "artist - title" (playerctl_format in the SwayOSD config).
+bind("XF86AudioPlay",  "Play/pause",     hl.dsp.exec_cmd("swayosd-client --playerctl play-pause"), { locked = true })
+bind("XF86AudioPause", "Play/pause",     hl.dsp.exec_cmd("swayosd-client --playerctl play-pause"), { locked = true })
+bind("XF86AudioNext",  "Next track",     hl.dsp.exec_cmd("swayosd-client --playerctl next"),       { locked = true })
+bind("XF86AudioPrev",  "Previous track", hl.dsp.exec_cmd("swayosd-client --playerctl prev"),       { locked = true })
 
 --------------------------------------------
 ---- XFCE PARITY: SUPER / CTRL+ALT BINDS ----
@@ -701,7 +766,8 @@ hl.window_rule({
 
 hl.window_rule({
     name  = "wireshark-ws6",
-    match = { class = [[^wireshark$]] },
+    -- Wireshark 4.6 reports its reverse-DNS app id; older builds "wireshark".
+    match = { class = [[^(wireshark|org\.wireshark\.Wireshark)$]] },
     workspace = 6,
 })
 

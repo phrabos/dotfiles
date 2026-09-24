@@ -1,0 +1,24 @@
+# SwayOSD - on-screen display for the volume, mic, brightness and media keys
+# (bound in hyprland.lua). swayosd-server is started from hyprland.lua's
+# autostart; the keys call swayosd-client, which changes the value and shows
+# the popup in one step.
+#
+# Keys from the packaged /etc/xdg/swayosd/config.toml (SwayOSD 0.3.0).
+
+[server]
+# No `style =` here: the server loads ~/.config/swayosd/style.css by itself,
+# and a "~" in this key is not expanded.
+
+# Vertical position as a fraction of the screen height, from the top.
+top_margin = 0.85
+
+# 100, not the default 150: same cap as before (`wpctl -l 1`), so the key
+# cannot push into amplified, distorting territory.
+max_volume = 100
+
+# Never all the way to black.
+min_brightness = 5
+
+show_percentage = true
+
+playerctl_format = "{artist} - {title}"
