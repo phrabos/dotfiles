@@ -1,0 +1,13 @@
+#!/bin/sh
+# nmtui-popup - network picker for waybar's network module (replaces the
+# nm-applet tray menu). Opens `nmtui connect` in its own Ghostty window; the
+# local.nmtui class is floated and centred by a window rule in hyprland.lua.
+#
+# NEWT_COLORS restyles newt (nmtui's UI toolkit) from its default blue and
+# grey. It takes ANSI colour names, which Ghostty maps to its Catppuccin
+# Mocha palette, and "default" keeps the terminal's own translucent
+# background. Only the focused row is filled; a focused list is not.
+NEWT_COLORS='root=white,default;border=magenta,default;window=white,default;shadow=default,default;title=magenta,default;button=black,magenta;actbutton=black,brightmagenta;compactbutton=white,default;listbox=white,default;actlistbox=white,default;sellistbox=magenta,default;actsellistbox=black,magenta;textbox=white,default;acttextbox=black,magenta;entry=white,default;disentry=brightblack,default;label=white,default;checkbox=white,default;actcheckbox=black,magenta;emptyscale=,brightblack;fullscale=,magenta;helpline=white,default;roottext=white,default'
+export NEWT_COLORS
+
+exec ghostty --class=local.nmtui --title=Network -e nmtui "${1:-connect}"

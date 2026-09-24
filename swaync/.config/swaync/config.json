@@ -1,0 +1,137 @@
+{
+  "$schema": "/etc/xdg/swaync/configSchema.json",
+
+  "ignore-gtk-theme": true,
+  "cssPriority": "user",
+
+  "positionX": "right",
+  "positionY": "top",
+  "layer": "overlay",
+  "layer-shell": true,
+  "layer-shell-cover-screen": true,
+
+  "control-center-layer": "top",
+  "control-center-exclusive-zone": true,
+  "control-center-width": 420,
+  "control-center-height": 600,
+  "fit-to-screen": true,
+  "control-center-margin-top": 8,
+  "control-center-margin-bottom": 8,
+  "control-center-margin-right": 8,
+  "control-center-margin-left": 0,
+
+  "notification-window-width": 420,
+  "timeout": 6,
+  "timeout-low": 4,
+  "timeout-critical": 0,
+  "transition-time": 200,
+
+  "notification-grouping": true,
+  "notification-2fa-action": true,
+  "notification-inline-replies": true,
+  "notification-body-image-height": 100,
+  "notification-body-image-width": 200,
+  "image-visibility": "when-available",
+  "relative-timestamps": true,
+  "keyboard-shortcuts": true,
+  "hide-on-clear": false,
+  "hide-on-action": true,
+  "text-empty": "No notifications",
+  "script-fail-notify": true,
+
+  "notification-visibility": {
+    "mute-hyprshell": {
+      "state": "ignored",
+      "app-name": "^hyprshell$"
+    }
+  },
+
+  "widgets": [
+    "inhibitors",
+    "title",
+    "dnd",
+    "notifications",
+    "mpris",
+    "volume",
+    "backlight",
+    "buttons-grid"
+  ],
+
+  "widget-config": {
+    "inhibitors": {
+      "text": "Inhibited",
+      "clear-all-button": true,
+      "button-text": "Clear"
+    },
+    "title": {
+      "text": "Notifications",
+      "clear-all-button": true,
+      "button-text": "Clear all"
+    },
+    "dnd": {
+      "text": "Do Not Disturb"
+    },
+    "notifications": {
+      "vexpand": true
+    },
+    "mpris": {
+      "blacklist": ["playerctld"],
+      "autohide": true,
+      "show-album-art": "when-available",
+      "loop-carousel": false
+    },
+    "volume": {
+      "label": "󰕾",
+      "show-per-app": true,
+      "show-per-app-icon": true,
+      "show-per-app-label": true,
+      "expand-per-app": false,
+      "empty-list-label": "Nothing playing",
+      "expand-button-label": "󰅀",
+      "collapse-button-label": "󰅃",
+      "animation-type": "slide_down",
+      "animation-duration": 200
+    },
+    "backlight": {
+      "label": "󰃠",
+      "device": "intel_backlight",
+      "subsystem": "backlight",
+      "min": 5
+    },
+    "buttons-grid": {
+      "buttons-per-row": 6,
+      "actions": [
+        {
+          "label": "󰖩",
+          "type": "toggle",
+          "command": "~/.local/bin/swaync-toggle wifi",
+          "update-command": "~/.local/bin/swaync-toggle wifi status"
+        },
+        {
+          "label": "󰂯",
+          "type": "toggle",
+          "command": "~/.local/bin/swaync-toggle bluetooth",
+          "update-command": "~/.local/bin/swaync-toggle bluetooth status"
+        },
+        {
+          "label": "󰍬",
+          "type": "toggle",
+          "command": "~/.local/bin/swaync-toggle mic",
+          "update-command": "~/.local/bin/swaync-toggle mic status"
+        },
+        {
+          "label": "󰹑",
+          "command": "~/.local/bin/swaync-toggle screenshot"
+        },
+        {
+          "label": "󰌾",
+          "command": "~/.local/bin/swaync-toggle lock"
+        },
+        {
+          "label": "󰐥",
+          "command": "~/.local/bin/swaync-toggle power"
+        }
+      ]
+    }
+  }
+}

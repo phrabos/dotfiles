@@ -1,0 +1,422 @@
+/* swaync - Catppuccin Mocha, mauve accent, matching waybar/ghostty/hyprland.
+ *
+ * Written for swaync 0.12 (GTK 4). swaync loads its packaged stylesheet
+ * (/etc/xdg/swaync/style.css) first and this file on top, so this one only
+ * overrides: mostly the CSS custom properties the packaged sheet is built
+ * on, plus the few rules that need a different shape. That keeps upstream's
+ * layout intact across upgrades, where a full replacement theme would not
+ * (the official catppuccin/swaync port starts from `* { all: unset }`).
+ *
+ * Icon and album-art sizes live here as --variables; the matching
+ * config.json keys (notification-icon-size, image-size, icon-size) are
+ * deprecated since 0.12.0.
+ *
+ * Language: GTK 4 CSS, which has var() and :root (GTK 4.16+), but not every
+ * browser property. Apply changes with `swaync-client -rs`; inspect live with
+ * `GTK_DEBUG=interactive swaync --replace`. */
+
+:root {
+  /* Catppuccin Mocha */
+  --crust: #11111b;
+  --mantle: #181825;
+  --base: #1e1e2e;
+  --surface0: #313244;
+  --surface1: #45475a;
+  --surface2: #585b70;
+  --overlay0: #6c7086;
+  --subtext0: #a6adc8;
+  --subtext1: #bac2de;
+  --text: #cdd6f4;
+  --lavender: #b4befe;
+  --mauve: #cba6f7;
+  --red: #f38ba8;
+  --peach: #fab387;
+  --yellow: #f9e2af;
+  --green: #a6e3a1;
+
+  /* swaync's own variables */
+  /* 0.8 alpha everywhere, matching ghostty's background-opacity and waybar;
+   * Hyprland blurs behind both swaync layers (hyprland.lua layer rules). */
+  --cc-bg: rgba(30, 30, 46, 0.8);
+  --noti-bg: 30, 30, 46; /* an r, g, b triple: used as rgba(var(--noti-bg), a) */
+  --noti-bg-alpha: 0.8;
+  --noti-bg-darker: var(--mantle);
+  --noti-bg-hover: rgba(69, 71, 90, 0.6); /* surface1 */
+  --noti-bg-focus: rgba(69, 71, 90, 0.45);
+  --noti-bg-alt: rgba(49, 50, 68, 0.6); /* surface0; per-app volume list */
+  --noti-close-bg: var(--surface1);
+  --noti-close-bg-hover: var(--red);
+  --noti-border-color: var(--mauve);
+  --text-color: var(--text);
+  --text-color-disabled: var(--overlay0);
+  --bg-selected: var(--mauve);
+
+  --border-radius: 8px; /* hyprland decoration.rounding */
+  --border: 2px solid var(--noti-border-color); /* hyprland border_size */
+  --notification-shadow: 0 2px 8px rgba(17, 17, 27, 0.5);
+
+  --font-size-summary: 14px;
+  --font-size-body: 13px;
+  --notification-icon-size: 48px;
+  --notification-group-icon-size: 24px;
+  /* --notification-app-icon-size follows as icon-size / 3 */
+
+  --mpris-album-art-icon-size: 72px;
+  --mpris-album-art-overlay: rgba(17, 17, 27, 0.6);
+  --mpris-album-art-shadow: 0 2px 8px rgba(17, 17, 27, 0.6);
+  --mpris-button-hover: rgba(69, 71, 90, 0.6);
+
+  --widget-volume-row-icon-size: 20px;
+}
+
+* {
+  font-family: "IosevkaTerm Nerd Font Mono", monospace;
+}
+
+/* Nerd Font *Mono* squeezes every icon into one text cell, which is right
+ * for text but leaves icon-only labels tiny. Those use the Propo build of
+ * the same font instead, where icons keep their natural width. */
+.widget-volume > box > label,
+.widget-backlight > label,
+.widget-buttons-grid flowboxchild > button label {
+  font-family: "IosevkaTerm Nerd Font Propo", "IosevkaTerm Nerd Font Mono", monospace;
+}
+
+/* ─── Popups ─────────────────────────────────────────────────────────────── */
+
+/* 4px + the row's 4px/8px = 8px off the bar and the screen edge, the same
+ * as hyprland gaps_out. */
+.floating-notifications {
+  padding-top: 4px;
+}
+
+.notification-row .notification-background {
+  padding: 4px 8px;
+}
+
+/* The urgency levels carry over from dunst: mauve frame for normal, a quiet
+ * overlay0 frame and dimmer text for low, red frame and red summary for
+ * critical (critical also ignores Do Not Disturb and never times out). */
+.notification-row .notification-background .notification.low {
+  border-color: var(--overlay0);
+}
+
+.notification-row .notification-background .notification.low .summary,
+.notification-row .notification-background .notification.low .body {
+  color: var(--subtext0);
+}
+
+.notification-row .notification-background .notification.critical {
+  border-color: var(--red);
+}
+
+.notification-row .notification-background .notification.critical .summary {
+  color: var(--red);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .time {
+  /* upstream gives the timestamp the same weight as the summary */
+  font-size: var(--font-size-body);
+  font-weight: normal;
+  color: var(--overlay0);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .body {
+  color: var(--subtext1);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .image {
+  /* upstream crops images into circles; app icons read better as-is */
+  border-radius: 6px;
+}
+
+.close-button {
+  color: var(--text);
+}
+
+.close-button:hover {
+  color: var(--base);
+}
+
+/* Alternative actions ("Reply", "Open", the 2FA copy button). */
+.notification-row .notification-background .notification .notification-action > button {
+  background: var(--surface0);
+  color: var(--text);
+  border: none;
+  box-shadow: none;
+  border-radius: 6px;
+}
+
+.notification-row .notification-background .notification .notification-action > button:hover {
+  background: var(--surface1);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-entry {
+  border: 1px solid var(--surface1);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-entry:focus-within {
+  border-color: var(--mauve);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-button {
+  border: none;
+  background: var(--mauve);
+  color: var(--base);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-button:disabled {
+  background: var(--surface0);
+  color: var(--overlay0);
+}
+
+/* Progress hint (e.g. `notify-send -h int:value:40`). */
+.notification progressbar trough {
+  background: var(--surface0);
+  border: none;
+  border-radius: 4px;
+  min-height: 6px;
+}
+
+.notification progressbar progress {
+  background: var(--mauve);
+  border: none;
+  border-radius: 4px;
+  min-height: 6px;
+}
+
+.notification.critical progressbar progress {
+  background: var(--red);
+}
+
+/* ─── Control center ─────────────────────────────────────────────────────── */
+
+/* The focused-window look: 2px mauve frame, as Hyprland's active border. */
+.control-center {
+  border: var(--border);
+  box-shadow: var(--notification-shadow);
+}
+
+/* Inside the panel, notifications are cards on the panel's own background,
+ * so they drop the mauve frame (a stack of them was too loud) for surface0.
+ * Urgency still shows: critical keeps its red frame. */
+.control-center .control-center-list .notification {
+  background: rgba(49, 50, 68, 0.6);
+  border: 1px solid var(--surface1);
+  box-shadow: none;
+}
+
+.control-center .control-center-list .notification.critical {
+  border-color: var(--red);
+}
+
+/* Keyboard focus (arrow keys in the panel): upstream paints a full-width
+ * band behind the row; a mauve frame on the card itself is quieter. */
+.notification-row:focus,
+.notification-group:focus {
+  background: transparent;
+}
+
+.control-center .control-center-list .notification-row:focus .notification {
+  border-color: var(--mauve);
+}
+
+.control-center .control-center-list-placeholder {
+  color: var(--overlay0);
+  opacity: 1;
+}
+
+.notification-group .notification-group-headers .notification-group-header {
+  color: var(--subtext0);
+}
+
+.notification-group .notification-group-buttons button {
+  background: var(--surface0);
+  color: var(--text);
+  border-radius: 6px;
+}
+
+.notification-group .notification-group-buttons button:hover {
+  background: var(--surface1);
+}
+
+scrollbar slider {
+  background: var(--surface2);
+  min-width: 4px;
+}
+
+/* ─── Widgets ────────────────────────────────────────────────────────────── */
+
+.widget-title > label,
+.widget-inhibitors > label {
+  color: var(--text);
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.widget-title > button,
+.widget-inhibitors > button {
+  background: var(--surface0);
+  color: var(--text);
+  border: none;
+  box-shadow: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+}
+
+.widget-title > button:hover,
+.widget-inhibitors > button:hover {
+  background: var(--red);
+  color: var(--base);
+}
+
+/* Do Not Disturb: the switch fills mauve when on, as a waybar active
+ * workspace does. */
+.widget-dnd label {
+  font-size: 1rem;
+}
+
+.widget-dnd switch {
+  background: var(--surface0);
+  border: none;
+  box-shadow: none;
+}
+
+.widget-dnd switch:checked {
+  background: var(--mauve);
+}
+
+.widget-dnd switch slider {
+  background: var(--text);
+  border: none;
+  box-shadow: none;
+}
+
+.widget-dnd switch:checked slider {
+  background: var(--base);
+}
+
+/* Media player card. */
+/* margin 0 so the card lines up with the slider and button rows below. */
+.widget-mpris .widget-mpris-player {
+  background: var(--surface0);
+  box-shadow: none;
+  margin: 0;
+}
+
+.widget-mpris .widget-mpris-player .widget-mpris-title {
+  color: var(--text);
+}
+
+.widget-mpris .widget-mpris-player .widget-mpris-subtitle {
+  color: var(--subtext0);
+}
+
+.widget-mpris button {
+  color: var(--text);
+}
+
+/* Sliders. The icons in front take the colours waybar uses for the same
+ * thing: yellow for audio, peach for brightness. */
+.widget-volume,
+.widget-backlight {
+  background: rgba(49, 50, 68, 0.6);
+  padding: 4px 8px;
+}
+
+.widget-volume > box > label,
+.widget-backlight > label {
+  font-size: 18px;
+  min-width: 28px;
+}
+
+.widget-volume > box > label {
+  color: var(--yellow);
+}
+
+.widget-backlight > label {
+  color: var(--peach);
+}
+
+.widget-volume > box > button {
+  background: transparent;
+  color: var(--subtext0);
+  border: none;
+  box-shadow: none;
+}
+
+.widget-volume > box > button:hover {
+  background: var(--surface1);
+  color: var(--text);
+}
+
+.per-app-volume label {
+  color: var(--subtext1);
+}
+
+scale trough {
+  background: var(--surface1);
+  border: none;
+  border-radius: 4px;
+  min-height: 6px;
+}
+
+scale highlight {
+  background: var(--mauve);
+  border: none;
+  border-radius: 4px;
+}
+
+scale slider {
+  background: var(--text);
+  border: none;
+  box-shadow: 0 1px 3px rgba(17, 17, 27, 0.6);
+  min-width: 14px;
+  min-height: 14px;
+  margin: -5px;
+}
+
+/* Quick settings. Toggles fill mauve while on; the power button is red on
+ * hover, as waybar's. */
+/* padding 0 lines the grid up with the cards above; the small child
+ * padding and zero button min-width keep all six on one row at 420px. */
+.widget-buttons-grid {
+  padding: 0;
+}
+
+.widget-buttons-grid flowboxchild {
+  padding: 3px;
+}
+
+.widget-buttons-grid flowboxchild > button {
+  background: var(--surface0);
+  color: var(--text);
+  border: none;
+  box-shadow: none;
+  border-radius: var(--border-radius);
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+}
+
+.widget-buttons-grid flowboxchild > button label {
+  font-size: 20px;
+}
+
+.widget-buttons-grid flowboxchild > button:hover {
+  background: var(--surface1);
+}
+
+.widget-buttons-grid flowboxchild > button.toggle:checked {
+  background: var(--mauve);
+  color: var(--base);
+}
+
+.widget-buttons-grid flowboxchild > button.toggle:checked:hover {
+  background: var(--lavender);
+}
+
+.widget-buttons-grid flowboxchild:last-child > button:hover {
+  background: var(--red);
+  color: var(--base);
+}

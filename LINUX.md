@@ -283,7 +283,7 @@ The compositor and its tooling come from apt:
 ```bash
 sudo apt install -y hyprland hyprpaper hyprlock hypridle hyprshutdown \
   hyprland-guiutils hyprlauncher xdg-desktop-portal-hyprland xwayland \
-  waybar dunst cliphist grim slurp wl-clipboard swappy playerctl \
+  waybar sway-notification-center cliphist grim slurp wl-clipboard swappy playerctl \
   brightnessctl nwg-displays papirus-icon-theme sassc
 ```
 

@@ -19,8 +19,11 @@
 @define-color red      #f38ba8;
 @define-color teal     #94e2d5;
 
+/* Propo, not Mono: the Mono build squeezes every Nerd Font icon into one
+ * text cell, which shrinks the bar's icons to specks. Iosevka Term's text
+ * is monospaced in every build, so only the icons change. */
 * {
-  font-family: "IosevkaTerm Nerd Font Mono";
+  font-family: "IosevkaTerm Nerd Font Propo", "IosevkaTerm Nerd Font Mono";
   font-size: 13px;
   border: none;
   border-radius: 0;
@@ -68,14 +71,6 @@ window#waybar {
   border-radius: 6px;
 }
 
-#window {
-  color: @subtext0;
-}
-
-window#waybar.empty #window {
-  background: transparent;
-}
-
 #custom-ipswitch,
 #network,
 #bluetooth,
@@ -83,12 +78,36 @@ window#waybar.empty #window {
 #memory,
 #battery,
 #clock,
-#tray,
+#tray-drawer,
+#custom-notification,
 #custom-power {
   padding: 0 10px;
   margin: 4px 2px;
   background: @surface0;
   border-radius: 6px;
+}
+
+/* Icon-only chips: a touch more icon, so each pill reads as a button. */
+#network,
+#bluetooth,
+#pulseaudio,
+#memory,
+#battery,
+#custom-power {
+  font-size: 15px;
+  padding: 0 9px;
+}
+
+/* Tray drawer: one pill holding the chevron and, on hover, the tray. */
+#custom-tray-chevron {
+  color: @overlay0;
+  font-size: 15px;
+}
+#tray-drawer:hover #custom-tray-chevron {
+  color: @text;
+}
+#tray {
+  margin-right: 8px;
 }
 
 /* ─── IP switcher ──────────────────────────────────────────────────────────
@@ -144,6 +163,13 @@ window#waybar.empty #window {
 #memory {
   color: @mauve;
 }
+#memory.warning {
+  color: @peach;
+}
+#memory.critical {
+  color: @base;
+  background: @red;
+}
 
 /* Battery. #battery.<status> and #battery.<state> are both documented, and
  * they combine as #battery.<status>.<state>. */
@@ -168,6 +194,26 @@ window#waybar.empty #window {
 
 #clock {
   color: @text;
+}
+
+/* swaync. Classes are the module's "alt" state, plus cc-open while the
+ * panel is showing. Unread notifications light up mauve; Do Not Disturb
+ * dims the bell. */
+#custom-notification {
+  color: @mauve;
+  font-size: 15px;
+}
+/* Do Not Disturb is the "mode is on" state, so it takes the alert colour,
+ * as Omarchy's indicators do. */
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification,
+#custom-notification.dnd-inhibited-none,
+#custom-notification.dnd-inhibited-notification {
+  color: @red;
+}
+#custom-notification.cc-open {
+  color: @base;
+  background: @mauve;
 }
 
 #custom-power {

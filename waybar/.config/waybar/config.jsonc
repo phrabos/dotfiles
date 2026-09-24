@@ -9,17 +9,22 @@
   "height": 30,
   "spacing": 8,
 
+  // Layout follows Omarchy (v3.8.4, its last waybar release): clock in the
+  // centre with status indicators that only appear when there is something
+  // to say, icon-only status on the right with the detail in tooltips, and
+  // the tray folded into a drawer. The pill chips and the IP switcher are
+  // this config's own. No window title: the mauve border already marks the
+  // focused window, and hyprshell (SUPER+Tab) lists titles when needed.
   "modules-left": ["hyprland/workspaces", "hyprland/submap"],
-  "modules-center": ["hyprland/window"],
+  "modules-center": ["clock", "custom/notification"],
   "modules-right": [
     "custom/ipswitch",
-    "network",
+    "group/tray-drawer",
     "bluetooth",
+    "network",
     "pulseaudio",
     "memory",
     "battery",
-    "clock",
-    "tray",
     "custom/power"
   ],
 
@@ -57,11 +62,6 @@
     "tooltip": false
   },
 
-  "hyprland/window": {
-    "format": "{title}",
-    "max-length": 60,
-    "separate-outputs": true
-  },
 
   // Port of the XFCE genmon IP switcher. Left click cycles interface,
   // right click copies the shown IP. Shares its state file with
@@ -78,15 +78,31 @@
     "on-click-right": "/home/phrabos/.local/bin/waybar-ipswitch.sh copy"
   },
 
+  // Pinned to the wifi card. Auto-detection picks the interface from the
+  // routing table, and a VPN such as HTB's tun0 pushes gateway routes with
+  // metric 0 that outrank wlan0's default route (metric 600), so the chip
+  // switched to "tun0's IP" and duplicated custom/ipswitch. IPs belong to
+  // the switcher; this chip is link status. Wildcard, so a renamed card (wlp*)
+  // still matches. Trade-off: a wired connection does not show here (the
+  // switcher still shows its IP).
   "network": {
+    "interface": "wl*",
     "interval": 5,
-    "format-wifi": "  {essid} {signalStrength}%",
-    "format-ethernet": "󰈀 {ipaddr}",
-    "format-disconnected": "󰤭 offline",
+    // {icon} steps through the signal bars by signal strength.
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤮",
+    "format-disabled": "󰤮",
     "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
-    "tooltip-format-wifi": "{essid}  {signalStrength}% ({signaldBm} dBm)\n{ipaddr}/{cidr}\n{frequency} MHz",
+    "tooltip-format-wifi": "{essid}  {signalStrength}% ({signaldBm} dBm)\n{ipaddr}/{cidr}\n{frequency} GHz",
     "tooltip-format-ethernet": "{ifname}: {ipaddr}/{cidr}\ngateway {gwaddr}",
-    "on-click": "nm-connection-editor"
+    "tooltip-format-disconnected": "Disconnected",
+    "tooltip-format-disabled": "Wi-Fi off",
+    // Left: pick / join a network (nmtui asks for the password itself).
+    // Right: full connection editor. Replaces nm-applet's tray menu.
+    "on-click": "nmtui-popup",
+    "on-click-right": "nm-connection-editor"
   },
 
   "bluetooth": {
@@ -94,8 +110,9 @@
     "format-on": "󰂯",
     "format-off": "󰂲",
     "format-disabled": "󰂲",
-    "format-connected": "󰂱 {num_connections}",
-    "format-connected-battery": "󰂱 {device_battery_percentage}%",
+    "format-connected": "󰂱",
+    "format-connected-battery": "󰂱",
+    "format-no-controller": "",
     "tooltip-format": "{controller_alias}\n{status}",
     "tooltip-format-connected": "{controller_alias}\n{num_connections} connected\n{device_enumerate}",
     "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
@@ -103,16 +120,34 @@
     "on-click": "blueman-manager"
   },
 
+  // Left: mixer. Right: mute. Scroll: volume (capped at 100%, as the keys).
   "pulseaudio": {
-    "format": "{icon} {volume}%",
-    "format-muted": "󰝟 muted",
-    "format-icons": { "default": ["", "", ""] },
-    "on-click": "pavucontrol"
+    "format": "{icon}",
+    "format-muted": "󰝟",
+    "format-bluetooth": "󰂰",
+    "format-bluetooth-muted": "󰝟",
+    "format-icons": {
+      "headphone": "󰋋",
+      "headset": "󰋎",
+      "default": ["󰕿", "󰖀", "󰕾"]
+    },
+    "tooltip-format": "{desc}\n{volume}%",
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
   },
 
+  // Icon only; the states colour it when memory gets tight.
   "memory": {
-    "format": "  {percentage}%",
-    "interval": 5
+    "format": "󰍛",
+    "tooltip-format": "Memory {used:0.1f} / {total:0.1f} GiB ({percentage}%)\nSwap {swapUsed:0.1f} / {swapTotal:0.1f} GiB",
+    "interval": 5,
+    "states": {
+      "warning": 75,
+      "critical": 90
+    },
+    "on-click": "ghostty -e btop"
   },
 
   // events fires notify-send directly, so low-battery alerts work without a
@@ -121,36 +156,88 @@
   "battery": {
     "bat": "BAT0",
     "interval": 30,
+    // Same thresholds as UPower (system/etc/UPower/UPower.conf.d/), which
+    // hibernates at 5%.
     "states": {
-      "warning": 30,
-      "critical": 15
+      "warning": 20,
+      "critical": 10
     },
-    "format": "{icon} {capacity}%",
+    "format": "{icon}",
     // Only format-<status> with charging|discharging is documented. Yours
     // reports "Not charging" at 100% on AC, which matches neither, so plain
     // "format" renders that case.
-    "format-charging": "󰂄 {capacity}%",
-    "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"],
+    "format-charging": "󰂄",
+    "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
     "format-time": "{H}h {M}m",
+    "tooltip-format": "{capacity}% · {timeTo}\n{power:.1f} W",
     "events": {
-      "on-discharging-warning": "notify-send -u normal -i battery-caution 'Battery low' '30% remaining'",
-      "on-discharging-critical": "notify-send -u critical -i battery-empty 'Battery critical' '15% remaining — plug in now'",
-      "on-discharging-5": "notify-send -u critical -i battery-empty 'Battery at 5%' 'Shutting down soon'"
+      "on-discharging-warning": "notify-send -u normal -i battery-caution 'Battery low' '20% remaining'",
+      "on-discharging-critical": "notify-send -u critical -i battery-empty 'Battery critical' '10% remaining — plug in, hibernates at 5%'",
+      "on-discharging-5": "notify-send -u critical -i battery-empty 'Battery at 5%' 'Hibernating now'"
     }
   },
 
+  // Omarchy's clock: weekday and time; click swaps to the full date with ISO
+  // week number. The calendar stays as the tooltip.
   "clock": {
-    "format": "{:%a %d %b  %H:%M}",
+    "format": "{:%A %H:%M}",
+    "format-alt": "{:%d %B  W%V  %Y}",
     "tooltip-format": "<tt><small>{calendar}</small></tt>"
   },
 
+  // Tray in a drawer, as Omarchy's group/tray-expander: only the chevron
+  // shows until you hover it, then the tray icons slide out beside it.
+  "group/tray-drawer": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 400,
+      "children-class": "tray-drawer-item",
+      "transition-left-to-right": false
+    },
+    "modules": ["custom/tray-chevron", "tray"]
+  },
+
+  "custom/tray-chevron": {
+    "format": "󰅁",
+    "tooltip": false
+  },
+
   "tray": {
+    "icon-size": 14,
     "spacing": 10
+  },
+
+  // swaync, as an Omarchy-style centre indicator: hidden while there is
+  // nothing unread and Do Not Disturb is off (an empty icon hides the
+  // module), a mauve bell for unread notifications, a red one for Do Not
+  // Disturb. SUPER+N opens the panel at any time; SUPER+SHIFT+N toggles DND.
+  // -swb streams JSON on every change, so there is no interval; "alt" is the
+  // state (notification / none, each prefixed with dnd- and/or inhibited-)
+  // and is also added as a CSS class.
+  "custom/notification": {
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󱅫",
+      "none": "",
+      "dnd-notification": "󰂠",
+      "dnd-none": "󰪓",
+      "inhibited-notification": "󰂛",
+      "inhibited-none": "󰪑",
+      "dnd-inhibited-notification": "󰂛",
+      "dnd-inhibited-none": "󰪑"
+    },
+    "tooltip": true,
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true
   },
 
   "custom/power": {
     "format": "⏻",
     "tooltip": false,
-    "on-click": "hyprshutdown"
+    "on-click": "power-menu"
   }
 }

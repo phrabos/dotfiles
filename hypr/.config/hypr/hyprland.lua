@@ -132,26 +132,42 @@ hl.on("hyprland.start", function()
     -- Cmd+Tab-style window switcher overlay; binds SUPER+Tab itself. Installed
     -- from the GitHub release tarball to ~/.local/bin (not packaged in Kali).
     hl.exec_cmd("hyprshell run")
-    -- dunst is started explicitly rather than left to D-Bus activation.
-    -- Two service files claim org.freedesktop.Notifications on this box:
-    -- dunst's own, and xfce4-notifyd's (installed as part of XFCE). With two
-    -- providers for one bus name, which gets activated is not deterministic.
-    -- Starting dunst here makes it own the name inside the Hyprland session
-    -- while leaving the XFCE session's notifyd untouched.
-    hl.exec_cmd("dunst")
-    -- Debian puts the MATE polkit agent in /usr/libexec, not the
-    -- /usr/lib/policykit-1-mate path most Hyprland configs on the web use.
-    hl.exec_cmd("/usr/libexec/polkit-mate-authentication-agent-1")
+    -- Notifications: swaync (popups plus a control-center panel, SUPER+N).
+    -- Started explicitly rather than left to D-Bus activation: swaync and
+    -- xfce4-notifyd (installed with XFCE) both ship a service file for
+    -- org.freedesktop.Notifications, and with two providers for one bus name
+    -- which one D-Bus activates is not deterministic. Starting swaync here
+    -- makes it own the name in this session and leaves XFCE's notifyd alone.
+    -- Launched directly, not via its systemd unit: that unit is PartOf
+    -- graphical-session.target, which this session never starts, and a
+    -- direct launch inherits this session's WAYLAND_DISPLAY and PATH.
+    hl.exec_cmd("swaync")
+    -- Polkit agent (the password dialog for privileged actions):
+    -- hyprpolkitagent, Hyprland's own, replacing the MATE agent. It is a Qt 6
+    -- app, so it takes the Catppuccin palette from qt6ct. Debian ships it in
+    -- /usr/libexec.
+    hl.exec_cmd("/usr/libexec/hyprpolkitagent")
+    -- On-screen display for the volume / brightness / media keys below.
+    hl.exec_cmd("swayosd-server")
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
 
     -- Idle daemon: lock before suspend, screen back on after resume. See
     -- hypridle.conf - it is deliberately minimal to match XFCE.
     hl.exec_cmd("hypridle")
 
-    -- Tray applets XFCE autostarted. Both speak StatusNotifierItem, which is
-    -- what waybar's tray module consumes; nm-applet needs --indicator to use
-    -- SNI instead of the X11 system tray protocol, which does not exist here.
-    hl.exec_cmd("nm-applet --indicator")
+    -- Bluetooth pairing agent (PIN prompts); blueman-manager also needs it
+    -- running. Its tray icon is hidden - waybar's bluetooth module replaces
+    -- it - with blueman's plugin list:
+    --   gsettings set org.blueman.general plugin-list "['!StatusNotifierItem']"
+    -- "!StatusIcon" looks like the obvious key but is ignored on blueman
+    -- 2.4.4: StatusIcon depends on non-unloadable plugins, so it can't be
+    -- disabled. Dropping the SNI implementation leaves only the XEmbed
+    -- GtkStatusIcon, which draws nothing under Wayland but still shows in
+    -- XFCE's panel. Undo: `gsettings reset org.blueman.general plugin-list`.
+    --
+    -- No nm-applet: it only duplicated waybar's network module in the tray.
+    -- The network module opens nmtui instead, which prompts for wifi
+    -- passwords itself, and VPNs here are started outside NetworkManager.
     hl.exec_cmd("blueman-applet")
 end)
 
@@ -442,6 +458,12 @@ bind("SUPER + SHIFT + A", "Screenshot: region into swappy (annotate)", hl.dsp.ex
 -- by hyprshell (autostarted above), which registers its own binds at runtime -
 -- config lives in ~/.config/hyprshell/config.toml, not here.
 
+-- Notifications (swaync). The panel holds history, Do Not Disturb, media,
+-- volume/brightness and quick toggles; the waybar bell opens it too.
+bind("SUPER + N",         "Notification panel",                hl.dsp.exec_cmd("swaync-client -t -sw"))
+bind("SUPER + SHIFT + N", "Toggle Do Not Disturb",             hl.dsp.exec_cmd("swaync-client -d -sw"))
+bind("SUPER + CTRL + N",  "Dismiss newest notification popup", hl.dsp.exec_cmd("swaync-client --close-latest -sw"))
+
 -- Keybinding cheat sheet, as Omarchy's SUPER+K. Lists every bind above by its
 -- description; see ~/.local/bin/hypr-keybinds.
 bind("SUPER + K", "Keybinding cheat sheet", hl.dsp.exec_cmd("hypr-keybinds"))
@@ -703,6 +725,16 @@ hl.window_rule({
     float = true,
 })
 
+-- The network picker opened from waybar's network module: nmtui in its own
+-- Ghostty window. The custom class keeps it off ghostty-ws1 and floats it.
+hl.window_rule({
+    name  = "float-nmtui",
+    match = { class = [[^local\.nmtui$]] },
+    float = true,
+    size  = { 720, 520 },
+    center = true,
+})
+
 hl.window_rule({
     name  = "float-file-dialogs",
     match = { title = [[^(Open File|Save File|Select a File)$]] },
@@ -711,3 +743,38 @@ hl.window_rule({
 
 -- No app rule for workspace 7 - it is the blackhole, kept empty by design
 -- (same as the AeroSpace config's comment on workspace 7).
+
+---------------------
+---- LAYER RULES ----
+---------------------
+
+-- swaync draws at 0.8 alpha like ghostty and waybar; this puts the same blur
+-- behind it. Both namespaces are full-screen and mostly transparent (swaync's
+-- layer-shell-cover-screen, and the invisible click-catcher behind the
+-- panel), so ignore_alpha keeps the blur to the cards themselves instead of
+-- frosting the whole screen. 0.5 sits under the cards' 0.8 and over their
+-- shadows.
+-- waybar is also 0.8 alpha (style.css), but got no blur, so it read as a
+-- tinted strip rather than frosted glass like ghostty below it. The bar is
+-- one full-width surface; ignore_alpha keeps fully transparent gaps sharp.
+hl.layer_rule({
+    name         = "waybar-blur",
+    match        = { namespace = "^waybar$" },
+    blur         = true,
+    ignore_alpha = 0.2,
+})
+
+-- SwayOSD's volume/brightness pill, 0.85 alpha like the rest.
+hl.layer_rule({
+    name         = "swayosd-blur",
+    match        = { namespace = "^swayosd$" },
+    blur         = true,
+    ignore_alpha = 0.2,
+})
+
+hl.layer_rule({
+    name         = "swaync-blur",
+    match        = { namespace = "^swaync-(control-center|notification-window)$" },
+    blur         = true,
+    ignore_alpha = 0.5,
+})
