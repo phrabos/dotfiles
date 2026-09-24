@@ -1,0 +1,20 @@
+# GDM greeter settings - Catppuccin, to match the desktop.
+# gdm.service runs /usr/share/gdm/generate-config on start, which compiles every
+# file in this directory in name order; later files win, so 95 beats Debian's
+# 90 and Kali's 92 (which sets the Kali logo). Not owned by any package.
+# A malformed file stops gdm starting: test-compile before installing (LINUX.md).
+
+[org/gnome/desktop/interface]
+# GNOME's fixed accent set; pink is the nearest to Catppuccin pink/mauve.
+accent-color='pink'
+color-scheme='prefer-dark'
+font-name='Iosevka Nerd Font 11'
+cursor-theme='catppuccin-mocha-mauve-cursors'
+cursor-size=24
+icon-theme='Papirus-Dark'
+clock-format='24h'
+clock-show-weekday=true
+
+[org/gnome/login-screen]
+# No Kali logo; the avatar already carries the Catppuccin cat.
+logo=''

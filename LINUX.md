@@ -395,6 +395,115 @@ A `papirus-icon-theme` upgrade can reset the folders to blue; re-run the last
 line. SwayOSD's brightness control writes `/sys/class/backlight` directly,
 which works because this user is in the `video` group.
 
+### Boot and login screens
+
+Power-on to login is GRUB -> Plymouth -> GDM, all Catppuccin Mocha. The
+Lenovo logo is the firmware's, and GRUB's "Loading Linux ..." line is
+hard-coded by Debian (`quiet_boot="0"` in `/etc/grub.d/10_linux`).
+
+**Early KMS first.** Kali's initramfs includes the i915 driver but does not
+load it, so it came up ~0.3 s after the display manager. That is why Kali's
+stock lightdm showed no login screen here (only the tty1 text login; a
+greeter appeared after `sudo chvt 7`). Loading i915 in the initramfs fixes
+it, and it needs `thinkpad_acpi` first: on this T14s the kernel registers a
+privacy-screen provider, and i915 defers its probe until thinkpad_acpi is
+loaded (kernel >= 5.17). dracut and mkinitcpio's `kms` hook add
+privacy-screen drivers themselves; initramfs-tools does not. i915 is now up
+at ~3 s, the display manager starts at ~7 s. Kernel updates rebuild their
+initramfs from the same file (`/etc/kernel/postinst.d/initramfs-tools`).
+
+```bash
+sudo install -m644 system/etc/initramfs-tools/modules /etc/initramfs-tools/modules
+sudo update-initramfs -u      # newest kernel only; older ones stay as a fallback
+# After a kernel update, i915 should initialise before gdm starts:
+dmesg | grep 'Initialized i915'; journalctl -b -o short-monotonic | grep -m1 'Starting gdm'
+```
+
+**GRUB** - [catppuccin/grub](https://github.com/catppuccin/grub) Mocha. The
+drop-in is named `zz-` so it loads after Kali's package-owned
+`kali-themes.cfg`; its empty `GRUB_BACKGROUND` stops `05_debian_theme` putting
+Kali's image behind the `e` editor and `c` console.
+
+```bash
+git clone https://github.com/catppuccin/grub.git && git -C grub checkout 0a37ab1
+sudo cp -r --no-preserve=mode,ownership grub/src/catppuccin-mocha-grub-theme /boot/grub/themes/catppuccin-mocha
+sudo install -m644 system/etc/default/grub.d/zz-catppuccin.cfg /etc/default/grub.d/
+sudo update-grub              # should print "Found theme: ..."
+```
+
+**Plymouth** - [catppuccin/plymouth](https://github.com/catppuccin/plymouth)
+Mocha, which shows at boot, shutdown and hibernate resume. Its `watermark.png`
+is a transparent 1x1 image of ours: Debian's initramfs hook copies the Debian
+swirl in as the watermark of any `two-step` theme that lacks one. Don't use
+`plymouth-set-default-theme -R` - on Debian that rebuilds every kernel's
+initramfs (`update-initramfs -u -k all`).
+
+```bash
+git clone https://github.com/catppuccin/plymouth.git && git -C plymouth checkout 198eba2
+sudo cp -r --no-preserve=mode,ownership plymouth/themes/catppuccin-mocha /usr/share/plymouth/themes/
+sudo install -m644 system/usr/share/plymouth/themes/catppuccin-mocha/watermark.png \
+  /usr/share/plymouth/themes/catppuccin-mocha/
+sudo plymouth-set-default-theme catppuccin-mocha
+sudo update-initramfs -u
+```
+
+**GDM** stays the display manager. lightdm (even with the race fixed) starts
+Wayland sessions before logind has made them active, so Hyprland came up
+without the built-in keyboard, TrackPoint and touchpad
+([lightdm#63](https://github.com/canonical/lightdm/issues/63), open since
+2019; [Hyprland#8278](https://github.com/hyprwm/Hyprland/issues/8278)).
+greetd + tuigreet looked sound and SDDM + catppuccin/sddm was risky; neither
+is installed.
+
+GDM can only be themed partly without replacing gnome-shell's package-owned
+theme gresource (not done: a bad one means no login screen, and every
+gnome-shell update overwrites it). What is set:
+
+- `system/usr/share/gdm/dconf/95-catppuccin`: pink accent (GNOME's fixed
+  accent set), dark, Iosevka, Catppuccin cursor, 24h clock, no Kali logo.
+  `gdm.service` compiles `/usr/share/gdm/dconf/*` in name order on every
+  start, so 95 beats Debian's 90 and Kali's 92. **A malformed file stops gdm
+  starting** - test-compile it first (below). Not `/etc/dconf/profile/gdm`,
+  the upstream / Arch way: on Debian it bypasses the Debian and Kali layers.
+- The background: Kali's gnome-shell patch hard-codes
+  `/usr/share/desktop-base/kali-theme/login/background-blurred`. A dpkg
+  diversion moves Kali's symlink aside (updates then write there) and ours
+  points at a blurred, Mocha-tinted copy of the current wallpaper.
+- The avatar is the Catppuccin logo, set per user through AccountsService
+  (no sudo), so any display manager shows it.
+- Font and cursor copied system-wide: the greeter runs as its own user.
+
+```bash
+sudo install -Dm644 -t /usr/local/share/fonts/iosevka-nerd \
+  ~/.local/share/fonts/NerdFonts/IosevkaNerdFont-{Regular,Bold}.ttf && sudo fc-cache
+sudo cp -r ~/.local/share/icons/catppuccin-mocha-mauve-cursors /usr/share/icons/
+
+# Test-compile against the other layers as a normal user, then install.
+mkdir -p /tmp/gdmtest/d && cp -L /usr/share/gdm/dconf/[0-9]* /tmp/gdmtest/d/ &&
+  cp system/usr/share/gdm/dconf/95-catppuccin /tmp/gdmtest/d/ &&
+  dconf compile /tmp/gdmtest/out /tmp/gdmtest/d && echo OK
+sudo install -m644 system/usr/share/gdm/dconf/95-catppuccin /usr/share/gdm/dconf/
+
+# Login background (re-run the magick line after changing wallpaper).
+magick ~/.local/state/wallpaper/current -resize 1920x1080^ -gravity center \
+  -extent 1920x1080 -blur 0x28 -fill '#1e1e2e' -colorize 25% /tmp/login-blurred.jpg
+sudo install -Dm644 /tmp/login-blurred.jpg /usr/local/share/backgrounds/login-blurred.jpg
+sudo dpkg-divert --local --rename \
+  --divert /usr/share/desktop-base/kali-theme/login/background-blurred.kali \
+  --add /usr/share/desktop-base/kali-theme/login/background-blurred
+sudo ln -s /usr/local/share/backgrounds/login-blurred.jpg \
+  /usr/share/desktop-base/kali-theme/login/background-blurred
+
+# Avatar: official Catppuccin logo (MIT).
+curl -Lo /tmp/cat.png https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/logos/exports/1544x1544_circle.png
+magick /tmp/cat.png -resize 256x256 /tmp/cat.png
+busctl call org.freedesktop.Accounts /org/freedesktop/Accounts/User$(id -u) \
+  org.freedesktop.Accounts.User SetIconFile s /tmp/cat.png
+```
+
+Undo: remove `95-catppuccin`; for the background, remove our symlink and
+`sudo dpkg-divert --rename --remove <path>`.
+
 ### Window switcher — hyprshell
 
 The Cmd+Tab overlay on `Super+Tab` is [hyprshell](https://github.com/H3rmt/hyprshell)
