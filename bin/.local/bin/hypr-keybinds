@@ -2,12 +2,13 @@
 # Hyprland keybinding cheat sheet, bound to SUPER+K.
 #
 # Lists every bind that carries a description (hyprland.lua gives all of them
-# one) in hyprlauncher's dmenu mode, so it is searchable. Lua binds report
+# one) in Vicinae's dmenu mode, so it is searchable and looks like the
+# SUPER+Space launcher. Picking an entry just closes the list. Lua binds report
 # their dispatcher as "__lua", so the description is the only readable part.
 # modmask bits: SHIFT 1, CAPS 2, CTRL 4, ALT 8, SUPER 64.
 #
-# hyprshell's SUPER+Tab is registered by hyprshell itself without a
-# description, so it is added by hand.
+# hyprshell registers SUPER+Tab / SUPER+SHIFT+Tab itself, with descriptions,
+# so they show up here without help.
 
 {
     hyprctl binds -j | jq -r '
@@ -17,13 +18,18 @@
               (if (.modmask / 8  | floor) % 2 == 1 then "ALT"   else empty end),
               (if .modmask % 2 == 1                 then "SHIFT" else empty end) ];
         def keyname:
-            { "mouse:272": "Left drag", "mouse:273": "Right drag",
+            { "mouse:272": "Left mouse", "mouse:273": "Right mouse",
               "numbersign": "3", "dollar": "4", "percent": "5",
-              "bracketleft": "[", "bracketright": "]", "space": "Space" }[.key] // .key;
+              "bracketleft": "[", "bracketright": "]", "space": "Space",
+              "grave": "`", "XF86PowerOff": "Power button" }[.key] // .key;
         .[]
         | select(.has_description)
+        | select(.release | not)   # hyprshell close-on-release binds (Super_L etc.) are not shortcuts
         | (mods + [keyname] | join(" + ")) as $combo
         | (if .submap != "" then "[\(.submap)] " else "" end) + "\($combo)  —  \(.description)"
     '
-    echo "SUPER + Tab  —  Window switcher (hyprshell)"
-} | hyprlauncher -m >/dev/null
+} | vicinae dmenu \
+    --navigation-title "Keybindings" \
+    --placeholder "Search keybindings..." \
+    --section-title "{count} bindings" \
+    --no-quick-look >/dev/null

@@ -126,6 +126,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("hyprpaper")
     -- Start the launcher daemon without showing it; ALT+D toggles it.
     hl.exec_cmd("hyprlauncher -d")
+    -- Vicinae server; SUPER+Space toggles its window. Installed from the
+    -- official AppImage into ~/.local/opt/vicinae (not packaged in Kali).
+    hl.exec_cmd("vicinae server")
     -- Cmd+Tab-style window switcher overlay; binds SUPER+Tab itself. Installed
     -- from the GitHub release tarball to ~/.local/bin (not packaged in Kali).
     hl.exec_cmd("hyprshell run")
@@ -263,10 +266,12 @@ end
 
 -- Launchers. No AeroSpace equivalent - macOS uses Spotlight/Raycast.
 bind(mainMod .. " + Return", "Terminal", hl.dsp.exec_cmd(terminal))
-bind(mainMod .. " + D",      "App launcher", hl.dsp.exec_cmd(menu))
--- SUPER+Space is the Spotlight/Raycast shape (Cmd+Space). Same launcher as
--- ALT+D, which stays for AeroSpace-era muscle memory.
-bind("SUPER + space",        "App launcher", hl.dsp.exec_cmd(menu))
+bind(mainMod .. " + D",      "App launcher (hyprlauncher) - Esc or ALT+D closes", hl.dsp.exec_cmd(menu))
+-- SUPER+Space is Cmd+Space: Vicinae, a Spotlight/Raycast-style search over
+-- apps, files, calculator and clipboard history (see vicinae/ in dotfiles).
+-- The server is started in autostart; this only toggles its window. ALT+D
+-- keeps the plain hyprlauncher as a fallback.
+bind("SUPER + space",        "Search (Spotlight-style, Vicinae) - Esc or SUPER+Space closes", hl.dsp.exec_cmd("vicinae toggle"))
 
 -- Focus, vim keys. Safe alongside Zellij: it uses "Super Alt <arrow>" for pane
 -- focus, not alt-hjkl.
@@ -297,8 +302,10 @@ bind(mainMod .. " + A",            "Toggle tabbed group",  hl.dsp.group.toggle()
 bind(mainMod .. " + bracketleft",  "Previous tab in group", hl.dsp.group.prev())
 bind(mainMod .. " + bracketright", "Next tab in group",     hl.dsp.group.next())
 
--- Close.
-bind(mainMod .. " + SHIFT + Q", "Close window", hl.dsp.window.close())
+-- Close. Windows only: the launchers (ALT+D, SUPER+Space) are layer-shell
+-- overlays, not windows, so this skips them - close those with Escape or
+-- their own key again.
+bind(mainMod .. " + SHIFT + Q", "Close window (launchers: Esc)", hl.dsp.window.close())
 
 -- Blackhole (workspace 7) has no dedicated bind any more: ALT+M and
 -- ALT+SHIFT+M were dropped so both reach applications (Zellij's "Alt m" is
@@ -396,13 +403,20 @@ bind("SUPER + E", "File manager", hl.dsp.exec_cmd("thunar"))
 -- Web browser (was exo-open --launch WebBrowser; helpers.rc says firefox)
 bind("SUPER + W", "Web browser", hl.dsp.exec_cmd("firefox"))
 
+-- Wallpaper picker: lists ~/Pictures/wallpapers in Vicinae, applies the choice
+-- over hyprpaper IPC and writes it into hyprpaper.conf. See
+-- ~/.local/bin/wallpaper (it also takes a filename, or --random).
+bind("SUPER + SHIFT + W", "Wallpaper picker", hl.dsp.exec_cmd("wallpaper"))
+
 -- Display arrangement (was xfce4-display-settings on Super+P / XF86Display).
 bind("SUPER + P", "Display settings", hl.dsp.exec_cmd("nwg-displays"))
 
--- Clipboard history. XFCE had xfce4-clipman; cliphist is already collecting
--- (see autostart), this is the picker for it. hyprlauncher's -m is dmenu mode.
--- On SUPER+CTRL+V, as in Omarchy, because SUPER+V is universal paste below.
-bind("SUPER + CTRL + V", "Clipboard history", hl.dsp.exec_cmd([[sh -c 'cliphist list | hyprlauncher -m | cliphist decode | wl-copy']]))
+-- Clipboard history: Vicinae's, which records on its own, previews images and
+-- pastes straight into the previous window. toggle=true makes the same key
+-- close it. On SUPER+CTRL+V, as in Omarchy, because SUPER+V is universal
+-- paste below. cliphist still records in autostart as a fallback history:
+--   cliphist list | hyprlauncher -m | cliphist decode | wl-copy
+bind("SUPER + CTRL + V", "Clipboard history (Vicinae)", hl.dsp.exec_cmd("vicinae deeplink 'vicinae://launch/clipboard/history?toggle=true'"))
 
 -- Screenshots, on the macOS shape rather than the Print cluster: SUPER+SHIFT
 -- plus 3 / 4 / 5 for full / region / window, mirroring Cmd+Shift+3 and

@@ -310,6 +310,38 @@ stow hyprshell
 IPC — there are no switcher binds in the Hyprland config. The shipped
 `hyprshell.service` hardcodes `/usr/bin/hyprshell`, so it is not used.
 
+### Search launcher — Vicinae
+
+`Super+Space` (Cmd+Space) is [Vicinae](https://github.com/vicinaehq/vicinae),
+a Spotlight/Raycast-style launcher: apps, files, calculator, clipboard history.
+Not packaged in Kali. The release tarball needs glibc 2.44 and Qt 6.11 (Kali
+has 2.43 / 6.10), so use the AppImage, which bundles Qt and only needs glibc
+2.35. It is extracted rather than run directly, so each `vicinae toggle` does
+not remount a 100 MB image:
+
+```bash
+gh release download v0.29.0 -R vicinaehq/vicinae -p 'Vicinae-x86_64.AppImage'
+chmod +x Vicinae-x86_64.AppImage && ./Vicinae-x86_64.AppImage --appimage-extract
+mkdir -p ~/.local/opt && mv squashfs-root ~/.local/opt/vicinae
+# A wrapper, not a symlink: AppRun locates itself from $0.
+printf '#!/bin/sh\nexec "$HOME/.local/opt/vicinae/AppRun" "$@"\n' > ~/.local/bin/vicinae
+chmod +x ~/.local/bin/vicinae
+# Desktop entry + icon, so the desktop portal recognises the app ID.
+cp ~/.local/opt/vicinae/usr/share/applications/vicinae*.desktop ~/.local/share/applications/
+cp ~/.local/opt/vicinae/usr/share/icons/hicolor/512x512/apps/vicinae.png ~/.local/share/icons/hicolor/512x512/apps/
+# Create the data dir first, or stow folds all of ~/.local/share/vicinae into
+# the repo and Vicinae writes its databases there.
+mkdir -p ~/.local/share/vicinae && stow vicinae
+```
+
+`hyprland.lua` autostarts `vicinae server`; the bind only runs `vicinae toggle`.
+The `vicinae` package carries `settings.json` (theme, telemetry off, files in
+root search, close on focus loss) and a `catppuccin-mocha-mauve` theme - the
+bundled Catppuccin Mocha with the mauve accent instead of blue. Vicinae writes
+settings changes made in its GUI back to `settings.json`, i.e. into the repo.
+On first start it also drops browser native-messaging manifests into the
+Chrome/Chromium/Brave config dirs for its optional browser extension.
+
 ### Theming — not packaged, and the official theme is dead
 
 `catppuccin/gtk` was archived in June 2024. The maintained successor is

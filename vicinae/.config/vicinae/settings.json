@@ -1,0 +1,24 @@
+{
+	"$schema": "https://vicinae.com/schemas/config.json",
+	"telemetry": {
+		"system_info": false
+	},
+	"search_files_in_root": true,
+	"close_on_focus_loss": true,
+	"pop_to_root_on_close": true,
+	"theme": {
+		"light": {
+			"name": "catppuccin-mocha-mauve",
+			"icon_theme": "auto"
+		},
+		"dark": {
+			"name": "catppuccin-mocha-mauve",
+			"icon_theme": "auto"
+		}
+	},
+	"launcher_window": {
+		"layer_shell": {
+			"keyboard_interactivity": "on_demand"
+		}
+	}
+}

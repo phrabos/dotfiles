@@ -1,0 +1,63 @@
+#!/bin/sh
+# Wallpaper picker, bound to SUPER+SHIFT+W.
+#
+#   wallpaper              pick from ~/Pictures/wallpapers in Vicinae's list
+#   wallpaper <name|path>  set that one directly (no picker)
+#   wallpaper --random     pick one at random
+#
+# Applies over hyprpaper IPC (instant, no restart) AND rewrites the path lines
+# in hyprpaper.conf so the choice survives a logout.
+#
+# Two hyprpaper 0.8 quirks this works around:
+#   - the monitor field cannot be blank: `hyprctl hyprpaper wallpaper ",path"`
+#     returns success and does nothing, so each output is set by name.
+#   - there is no preload/reload any more; `wallpaper` is the only verb.
+
+set -eu
+
+DIR="$HOME/Pictures/wallpapers"
+CONF="$HOME/.config/hypr/hyprpaper.conf"
+FIT=cover
+
+die() { notify-send -u critical "Wallpaper" "$1" 2>/dev/null || echo "$1" >&2; exit 1; }
+
+[ -d "$DIR" ] || die "No wallpaper directory at $DIR"
+
+# find, not ls: ls is aliased to eza in this shell, whose column headers would
+# end up in the list.
+list() {
+    find "$DIR" -maxdepth 1 -type f \
+        \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) \
+        -printf '%f\n' | sort
+}
+
+case "${1:-}" in
+    --random) choice=$(list | shuf -n 1) ;;
+    "")       choice=$(list | vicinae dmenu \
+                  --navigation-title "Wallpaper" \
+                  --placeholder "Pick a wallpaper..." \
+                  --section-title "{count} wallpapers") ;;
+    *)        choice=$(basename "$1") ;;
+esac
+
+# Empty means the picker was dismissed.
+[ -n "$choice" ] || exit 0
+
+path="$DIR/$choice"
+[ -f "$path" ] || die "No such wallpaper: $choice"
+
+# Every connected output, by name. An unnamed monitor field is ignored.
+hyprctl monitors -j | jq -r '.[].name' | while read -r monitor; do
+    hyprctl hyprpaper wallpaper "$monitor,$path,$FIT" >/dev/null
+done
+
+# Persist. --follow-symlinks matters: this config is stowed, and without it sed
+# would replace the symlink with a regular file and break the dotfiles link.
+[ -f "$CONF" ] && sed -i --follow-symlinks -E "s|^( *path *= *).*|\1$path|" "$CONF"
+
+# Stable pointer to the current wallpaper for things that want "the
+# wallpaper" rather than a file name - hyprlock's background uses it.
+mkdir -p "$HOME/.local/state/wallpaper"
+ln -sfn "$path" "$HOME/.local/state/wallpaper/current"
+
+notify-send -t 2000 -i "$path" "Wallpaper" "$choice" 2>/dev/null || true
