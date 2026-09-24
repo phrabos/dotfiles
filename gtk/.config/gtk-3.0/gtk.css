@@ -1,0 +1,49 @@
+/*
+ * macOS-style word operations for GTK3 text widgets.
+ *
+ * Adds Alt (Option) as a word-granularity modifier, matching macOS:
+ *   Alt+Backspace      delete previous word
+ *   Alt+Left/Right     move by word
+ *   Alt+Shift+L/R      extend selection by word
+ *
+ * This is ADDITIVE - the built-in CUA bindings (Ctrl+Backspace,
+ * Ctrl+Left/Right) continue to work unchanged.
+ *
+ * Alt+Delete (delete next word) is deliberately omitted: xfwm4 grabs it
+ * as del_workspace_key, so it never reaches applications.
+ *
+ * Scope: GTK3 apps only. GTK4 removed -gtk-key-bindings; Firefox,
+ * Electron and Qt apps use their own editors and may ignore this.
+ */
+
+@binding-set WordOps {
+  bind "<alt>BackSpace"    { "delete-from-cursor" (word-ends, -1) };
+  bind "<alt>Left"         { "move-cursor" (words, -1, 0) };
+  bind "<alt>Right"        { "move-cursor" (words,  1, 0) };
+  bind "<alt><shift>Left"  { "move-cursor" (words, -1, 1) };
+  bind "<alt><shift>Right" { "move-cursor" (words,  1, 1) };
+}
+
+entry, spinbutton, textview {
+  -gtk-key-bindings: WordOps;
+}
+
+/*
+ * Theme fix: selected rows.
+ *
+ * Catppuccin-Mauve-Dark (the community Catppuccin-GTK-Theme port) styles
+ * `treeview.view:selected` with #e6e9ef - Catppuccin *Latte* mantle, a
+ * light-flavour leftover - so selected rows in every GTK3 tree view (Thunar's
+ * sidebar and file list, file-chooser lists) showed as a near-white bar with
+ * grey text. Mauve with base text instead, as waybar's active workspace.
+ */
+treeview.view:selected,
+treeview.view:selected:focus {
+  background-color: #cba6f7;   /* mauve */
+  color: #1e1e2e;              /* base */
+}
+
+treeview.view:selected:backdrop {
+  background-color: alpha(#cba6f7, 0.45);
+  color: #cdd6f4;              /* text */
+}

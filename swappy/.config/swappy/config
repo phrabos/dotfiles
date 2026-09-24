@@ -1,0 +1,13 @@
+# swappy - screenshot annotation (SUPER+SHIFT+A via screenshot-wl -a).
+# GLib keyfile format; keys from swappy(1), version 1.5.1.
+#
+# Only two departures from the defaults, both for consistency:
+#   save_dir   - same folder and naming as screenshot-wl, not ~/Desktop
+#   text_font  - the desktop font rather than generic sans-serif
+# (swappy's pen colours are fixed red/green/blue plus a picker - nothing to
+# theme there; the window itself follows the GTK theme.)
+
+[Default]
+save_dir=$HOME/Pictures/sh
+save_filename_format=Screenshot_%Y-%m-%d_%H_%M_%S-annotated.png
+text_font=IosevkaTerm Nerd Font Propo

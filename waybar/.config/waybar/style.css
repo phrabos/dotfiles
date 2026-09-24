@@ -30,6 +30,18 @@
   min-height: 0;
 }
 
+/* Tooltips. The * reset above strips GTK's tooltip styling, which left them
+ * as square black boxes; give them the same card look as swaync. */
+tooltip {
+  background: alpha(@base, 0.95);
+  border: 2px solid @mauve;
+  border-radius: 8px;
+}
+tooltip label {
+  color: @text;
+  padding: 4px 6px;
+}
+
 window#waybar {
   /* 0.8 alpha matches ghostty's background-opacity */
   background: alpha(@base, 0.8);
