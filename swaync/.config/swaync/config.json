@@ -99,7 +99,7 @@
       "min": 5
     },
     "buttons-grid": {
-      "buttons-per-row": 6,
+      "buttons-per-row": 7,
       "actions": [
         {
           "label": "󰖩",
@@ -118,6 +118,12 @@
           "type": "toggle",
           "command": "~/.local/bin/swaync-toggle mic",
           "update-command": "~/.local/bin/swaync-toggle mic status"
+        },
+        {
+          "label": "󰅶",
+          "type": "toggle",
+          "command": "~/.local/bin/swaync-toggle caffeine",
+          "update-command": "~/.local/bin/swaync-toggle caffeine status"
         },
         {
           "label": "󰹑",

@@ -16,7 +16,7 @@
   // this config's own. No window title: the mauve border already marks the
   // focused window, and hyprshell (SUPER+Tab) lists titles when needed.
   "modules-left": ["hyprland/workspaces", "hyprland/submap"],
-  "modules-center": ["clock", "custom/notification"],
+  "modules-center": ["custom/caffeine", "clock", "custom/notification"],
   "modules-right": [
     "custom/ipswitch",
     "group/tray-drawer",
@@ -65,6 +65,17 @@
   // genmon-ipswitch.sh so the XFCE panel and waybar stay in agreement.
   // The pkill refreshes the module immediately after a cycle rather than
   // waiting out the interval; 8 matches "signal" below.
+  // Caffeine: click to hold off dim, lock and hibernate (bin/caffeine, also
+  // the SUPER+N panel button). Signal 9 refreshes it after a toggle.
+  "custom/caffeine": {
+    "exec": "/home/phrabos/.local/bin/caffeine waybar",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 9,
+    "format": "{}",
+    "on-click": "/home/phrabos/.local/bin/caffeine toggle"
+  },
+
   "custom/ipswitch": {
     "exec": "/home/phrabos/.local/bin/waybar-ipswitch.sh",
     "return-type": "json",
@@ -211,10 +222,9 @@
     "spacing": 10
   },
 
-  // swaync, as an Omarchy-style centre indicator: hidden while there is
-  // nothing unread and Do Not Disturb is off (an empty icon hides the
-  // module), a mauve bell for unread notifications, a red one for Do Not
-  // Disturb. SUPER+N opens the panel at any time; SUPER+SHIFT+N toggles DND.
+  // swaync, as a centre indicator that is always visible: a dim bell while
+  // there is nothing unread, a mauve one for unread notifications, a peach
+  // one for Do Not Disturb. SUPER+N opens the panel at any time; SUPER+SHIFT+N toggles DND.
   // -swb streams JSON on every change, so there is no interval; "alt" is the
   // state (notification / none, each prefixed with dnd- and/or inhibited-)
   // and is also added as a CSS class.
@@ -222,7 +232,7 @@
     "format": "{icon}",
     "format-icons": {
       "notification": "󱅫",
-      "none": "",
+      "none": "󰂜",
       "dnd-notification": "󰂠",
       "dnd-none": "󰪓",
       "inhibited-notification": "󰂛",

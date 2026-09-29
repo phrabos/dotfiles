@@ -2,8 +2,8 @@
 # swaync-toggle - backs the quick-settings buttons in the swaync control
 # center (buttons-grid in ~/.config/swaync/config.json).
 #
-#   swaync-toggle wifi|bluetooth|mic          apply $SWAYNC_TOGGLE_STATE
-#   swaync-toggle wifi|bluetooth|mic status   print true/false for the button
+#   swaync-toggle wifi|bluetooth|mic|caffeine apply $SWAYNC_TOGGLE_STATE
+#   swaync-toggle wifi|bluetooth|mic|caffeine status   print true/false for the button
 #   swaync-toggle screenshot|lock|power       close the panel, then act
 #                                             (power opens power-menu)
 #
@@ -56,6 +56,14 @@ case "$1:$2" in
         if on; then wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 0
         else wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 1; fi ;;
 
+    # Caffeine: state lives in bin/caffeine, so waybar's chip and this button
+    # agree. The button only ever flips it; a stale checked state is corrected
+    # by the status command next time the panel opens.
+    caffeine:status)
+        caffeine status ;;
+    caffeine:)
+        if [ "$(caffeine status)" != "$SWAYNC_TOGGLE_STATE" ]; then caffeine toggle; fi ;;
+
     screenshot:)
         close_panel; exec screenshot-wl region ;;
     lock:)
@@ -64,6 +72,6 @@ case "$1:$2" in
         close_panel; exec power-menu ;;
 
     *)
-        echo "usage: ${0##*/} wifi|bluetooth|mic [status] | screenshot|lock|power" >&2
+        echo "usage: ${0##*/} wifi|bluetooth|mic|caffeine [status] | screenshot|lock|power" >&2
         exit 2 ;;
 esac

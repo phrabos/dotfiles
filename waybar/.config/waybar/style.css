@@ -83,6 +83,7 @@ window#waybar {
   border-radius: 8px;
 }
 
+#custom-caffeine,
 #custom-ipswitch,
 #network,
 #bluetooth,
@@ -108,6 +109,21 @@ window#waybar {
 #custom-power {
   font-size: 15px;
   padding: 0 9px;
+}
+
+/* The centre indicators (caffeine, notification bell) share one look: the
+ * same size and padding, a dim icon when idle, a coloured icon when the mode
+ * is active. The filled mauve pill is reserved for the open panel. */
+#custom-caffeine,
+#custom-notification {
+  font-size: 15px;
+  padding: 0 10px;
+  min-width: 16px;
+  color: @overlay0;
+}
+#custom-caffeine.activated,
+#custom-notification.notification {
+  color: @mauve;
 }
 
 /* Tray drawer: one pill holding the chevron and, on hover, the tray. */
@@ -209,19 +225,15 @@ window#waybar {
 }
 
 /* swaync. Classes are the module's "alt" state, plus cc-open while the
- * panel is showing. Unread notifications light up mauve; Do Not Disturb
- * dims the bell. */
-#custom-notification {
-  color: @mauve;
-  font-size: 15px;
-}
+ * panel is showing. Dim with nothing unread, mauve for unread, and peach
+ * for Do Not Disturb. */
 /* Do Not Disturb is the "mode is on" state, so it takes the alert colour,
  * as Omarchy's indicators do. */
 #custom-notification.dnd-none,
 #custom-notification.dnd-notification,
 #custom-notification.dnd-inhibited-none,
 #custom-notification.dnd-inhibited-notification {
-  color: @red;
+  color: @peach;
 }
 #custom-notification.cc-open {
   color: @base;

@@ -1,0 +1,47 @@
+#!/bin/sh
+# caffeine - hold off hypridle's dim, lock, screen-off and hibernate steps.
+#
+#   caffeine toggle   on if off, off if on, then refresh waybar
+#   caffeine status   print true/false (the swaync button's update-command)
+#   caffeine waybar   print waybar JSON for the custom/caffeine module
+#
+# "On" is a background `systemd-inhibit --what=idle` holding an idle lock, which
+# hypridle respects. Nothing here overrides logind's lid handling. The holder
+# pid lives in $XDG_RUNTIME_DIR (tmpfs, wiped at logout and reboot) and the
+# inhibitor dies with the process, so caffeine never survives a reboot.
+# waybar runs `caffeine waybar` on signal 9 (pkill -RTMIN+9 waybar).
+
+PATH="$HOME/.local/bin:$PATH"
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/caffeine.pid"
+
+# The pid must still be one of our holders, not a recycled number.
+running() {
+    [ -r "$PIDFILE" ] || return 1
+    pid=$(cat "$PIDFILE")
+    [ -n "$pid" ] && [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = systemd-inhibit ]
+}
+
+refresh() { pkill -x -RTMIN+9 waybar; }
+
+case "$1" in
+    toggle)
+        if running; then
+            kill "$(cat "$PIDFILE")"; rm -f "$PIDFILE"
+        else
+            systemd-inhibit --what=idle --who=caffeine \
+                --why="Caffeine mode: no dim or lock" sleep infinity \
+                >/dev/null 2>&1 &
+            echo $! > "$PIDFILE"
+        fi
+        refresh ;;
+    status)
+        if running; then echo true; else echo false; fi ;;
+    waybar)
+        if running; then
+            echo '{"text":"󰅶","class":"activated","tooltip":"Caffeine on: no dim, no lock"}'
+        else
+            echo '{"text":"󰾪","class":"deactivated","tooltip":"Caffeine off"}'
+        fi ;;
+    *)
+        echo "usage: ${0##*/} toggle|status|waybar" >&2; exit 2 ;;
+esac
