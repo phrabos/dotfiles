@@ -46,14 +46,57 @@ esac
 path="$DIR/$choice"
 [ -f "$path" ] || die "No such wallpaper: $choice"
 
-# Every connected output, by name. An unnamed monitor field is ignored.
-hyprctl monitors -j | jq -r '.[].name' | while read -r monitor; do
-    hyprctl hyprpaper wallpaper "$monitor,$path,$FIT" >/dev/null
+# Portrait screens (the HP, rotated) get a portrait crop: `cover` on a tall,
+# narrow output enlarges a thin centre strip of a landscape image, usually its
+# brightest part. The crop is made once and kept in $DIR/portrait/ under the
+# same name - outside the picker's list, which only reads $DIR itself. It is
+# the darkest of seven evenly spaced 9:16 strips, so what shows through
+# translucent windows stays calm. Already-tall images are used as they are.
+portrait_for() {
+    src="$1"
+    out="$DIR/portrait/$(basename "$src")"
+    [ -f "$out" ] && { echo "$out"; return; }
+    command -v magick >/dev/null 2>&1 || { echo "$src"; return; }
+    set -- $(magick identify -format '%w %h' "$src[0]")
+    w=$1 h=$2
+    cw=$((h * 9 / 16))
+    [ "$cw" -lt "$w" ] || { echo "$src"; return; }
+    best_x=0 best_mean=2
+    for i in 0 1 2 3 4 5 6; do
+        x=$(((w - cw) * i / 6))
+        mean=$(magick "$src[0]" -crop "${cw}x${h}+${x}+0" -colorspace Gray -format '%[fx:mean]' info:)
+        if awk "BEGIN { exit !($mean < $best_mean) }"; then best_x=$x best_mean=$mean; fi
+    done
+    mkdir -p "$DIR/portrait"
+    magick "$src[0]" -crop "${cw}x${h}+${best_x}+0" +repage -filter Lanczos \
+        -resize '1080x1920!' -quality 92 "$out"
+    echo "$out"
+}
+
+# Every connected output, by name (an unnamed monitor field is ignored).
+# transform 1/3/5/7 = rotated 90 or 270 degrees, i.e. portrait.
+hyprctl monitors -j | jq -r '.[] | "\(.name) \(.transform)"' | while read -r monitor transform; do
+    case "$transform" in
+        1 | 3 | 5 | 7) img=$(portrait_for "$path") ;;
+        *)             img="$path" ;;
+    esac
+    hyprctl hyprpaper wallpaper "$monitor,$img,$FIT" >/dev/null
 done
 
 # Persist. --follow-symlinks matters: this config is stowed, and without it sed
 # would replace the symlink with a regular file and break the dotfiles link.
-[ -f "$CONF" ] && sed -i --follow-symlinks -E "s|^( *path *= *).*|\1$path|" "$CONF"
+# Lines pointing into portrait/ (the HP's block) get the portrait crop; the
+# rest get the landscape image.
+if [ -f "$CONF" ]; then
+    sed -i --follow-symlinks -E "\|/portrait/|! s|^( *path *= *).*|\1$path|" "$CONF"
+    if grep -q '/portrait/' "$CONF"; then
+        portrait=$(portrait_for "$path")
+        # Only if a crop was made: writing a landscape path here would drop
+        # the /portrait/ marker this relies on.
+        case "$portrait" in */portrait/*) ;; *) exit 0 ;; esac
+        sed -i --follow-symlinks -E "\|/portrait/| s|^( *path *= *).*|\1$portrait|" "$CONF"
+    fi
+fi
 
 # Stable pointer to the current wallpaper for things that want "the
 # wallpaper" rather than a file name - hyprlock's background uses it.

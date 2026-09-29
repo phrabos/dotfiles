@@ -10,7 +10,7 @@ Verified on Kali rolling 2026.2 (XFCE, x86_64, glibc 2.42, GTK 4.22).
 
 **Binary renames.** Debian ships `bat` as `batcat` and `fd` as `fdfind`, to
 avoid clashes with unrelated packages. The configs in this repo call them by
-their upstream names, so `~/.local/bin` carries shims and `.zprofile` puts that
+their upstream names, so `~/.local/bin` carries shims and `.zshenv` puts that
 directory ahead of `/usr/bin`:
 
 ```bash
@@ -132,33 +132,47 @@ fc-cache -f ~/.local/share/fonts
 
 ## Release binaries → `~/.local/bin`
 
-Verify checksums where published. Note zellij's `.sha256sum` names the binary by
-its *build path*, so `sha256sum -c` against the tarball silently checks nothing —
-compare the extracted binary's hash by hand.
+Only the two self-updating installers live here now (`mise self-update`,
+`uv self update`):
 
 | Tool | Source |
 |---|---|
-| `starship` | `curl -fsSL https://starship.rs/install.sh \| sh -s -- -b ~/.local/bin -y` |
 | `mise` | `curl -fsSL https://mise.run \| sh` |
 | `uv` | `curl -fsSL https://astral.sh/uv/install.sh \| env UV_INSTALL_DIR=~/.local/bin INSTALLER_NO_MODIFY_PATH=1 sh` |
-| `atuin` | GitHub release `atuin-x86_64-unknown-linux-gnu.tar.gz` |
-| `carapace` | GitHub release `carapace-bin_*_linux_amd64.tar.gz` |
-| `zellij` | GitHub release `zellij-x86_64-unknown-linux-musl.tar.gz` |
-| `worktrunk` | GitHub release `worktrunk-x86_64-unknown-linux-musl.tar.xz` |
-| `pulumi` | `curl -fsSL https://get.pulumi.com \| sh -s -- --install-root ~/.local --no-edit-path` |
 
 **Do not use the vendor `curl | sh` installers that offer to edit your shell
 config.** `~/.zshrc` is a symlink into this repo, so an installer appending an
 init line writes into version control. Pass the flag that suppresses it
-(`--no-edit-path`, `INSTALLER_NO_MODIFY_PATH=1`, `-b`) or install the binary by
-hand.
+(`INSTALLER_NO_MODIFY_PATH=1`) or install the binary by hand.
 
-## npm (via mise-managed node)
+## CLI tools via mise
+
+Everything else that is not in the Kali repos is declared in
+`mise/.config/mise/config.toml` with `os = ["linux"]` (the file is shared with
+macOS, where the Brewfile covers the same tools). mise downloads the GitHub
+releases and verifies checksums / attestations itself.
 
 ```bash
-npm install -g @fission-ai/openspec firebase-tools @dotenvx/dotenvx
-mise reshim
+mise install     # after a fresh stow
+mise upgrade     # update everything declared "latest"
 ```
+
+| Tool | mise entry |
+|---|---|
+| atuin, carapace, starship, pulumi, dotenvx, zoxide | registry short names |
+| `wt` | `worktrunk` |
+| firebase | `firebase` (the standalone firebase-tools binary, not npm) |
+| openspec | `npm:@fission-ai/openspec` |
+| mongosh | `github:mongodb-js/mongosh` |
+| hyprshell | `github:H3rmt/hyprshell` (see "Window switcher" below) |
+| satty | `github:gabm/Satty` - screenshot annotation behind `screenshot-wl -a` (`Super+Shift+A`), replacing swappy |
+| zellij | `zellij`, **pinned**: a client only attaches to a server of the same version, so bump it after closing every session |
+
+`hyprland.lua` puts mise's shims on the session PATH, so keybinds and
+autostart (satty, hyprshell) find these too. `.zshrc` runs `mise activate zsh`,
+which puts the exact install dirs ahead of the shims in interactive shells.
+
+## npm (via mise-managed node)
 
 `corepack` comes from mise (`[settings.node] corepack = true`), not npm.
 
@@ -170,7 +184,9 @@ regardless of `MISE_YES=1`. Install it through npm instead:
 mise exec node@24 -- npm install -g @microsoft/inshellisense && mise reshim
 ```
 
-It backs `CARAPACE_BRIDGES='inshellisense,zsh'` in `.zshrc`.
+It backs `CARAPACE_BRIDGES='inshellisense,zsh'` in `.zshrc`. Global npm
+packages belong to one node version - they disappear when node's version
+changes - which is why the other npm tools moved into the mise config.
 
 ## uv tools
 
@@ -283,7 +299,7 @@ The compositor and its tooling come from apt:
 ```bash
 sudo apt install -y hyprland hyprpaper hyprlock hypridle hyprshutdown \
   hyprland-guiutils hyprlauncher xdg-desktop-portal-hyprland xwayland \
-  waybar sway-notification-center cliphist grim slurp wl-clipboard swappy playerctl \
+  waybar sway-notification-center cliphist grim slurp wl-clipboard playerctl \
   brightnessctl nwg-displays papirus-icon-theme sassc
 ```
 
@@ -514,15 +530,13 @@ Undo: remove `95-catppuccin`; for the background, remove our symlink and
 
 The Cmd+Tab overlay on `Super+Tab` is [hyprshell](https://github.com/H3rmt/hyprshell)
 (the renamed successor of hyprswitch). It is not packaged in Kali; take the
-release tarball. It needs Hyprland 0.55+ with the Lua config, GTK 4.18+ and
-libadwaita 1.8+, all of which Kali already has — only the layer-shell library is
-missing:
+release through mise (`github:H3rmt/hyprshell`). It needs Hyprland 0.55+ with
+the Lua config, GTK 4.18+ and libadwaita 1.8+, all of which Kali already has —
+only the layer-shell library is missing:
 
 ```bash
 sudo apt install -y libgtk4-layer-shell0
-gh release download v4.10.8 -R H3rmt/hyprshell -p 'hyprshell-4.10.8-x86_64.tar.zst'
-tar --zstd -xf hyprshell-4.10.8-x86_64.tar.zst hyprshell
-install -m755 hyprshell ~/.local/bin/hyprshell
+mise install     # installs hyprshell from the mise config
 stow hyprshell
 ```
 
@@ -621,6 +635,27 @@ nwg-displays writes hyprlang `monitor=` lines to `~/.config/hypr/monitors.conf`
 and its docs say to add `source = ...` to your config. There is no `source` in
 the Lua config, so that file would be written and silently ignored. `hypr`'s
 `hyprland.lua` reads it and replays each line through `hl.monitor()` instead.
+
+### Multiple monitors
+
+The desk layout lives in `hyprland.lua` (MONITORS): the ASUS 4K as the main
+screen, the HP in portrait to its right, the laptop below. External screens
+are matched by description (`desc:` is a prefix match, so no serials), so
+they keep their place on any port or dock.
+
+Apps follow workspaces, and workspaces have home screens (WORKSPACE RULES):
+ASUS 1 2 3 4 6 7 9, HP 5 (Obsidian) and 8 (Discord), laptop 10 (Keymapp).
+
+- **Unplug:** Hyprland moves the screen's workspaces to one still connected.
+- **Plug in:** a `monitor.added` hook pulls every workspace whose home that
+  screen is back onto it - including ones first opened while it was away.
+- **Lid closed while docked:** logind ignores it (`HandleLidSwitchDocked`),
+  and Hyprland's lid binds reload the config, which reads the lid state and
+  switches the panel off; workspace 10 moves to an external screen and comes
+  back when the lid opens. Undocked, the lid is logind's as before.
+
+A `monitors.conf` from nwg-displays is applied after the desk layout, so it
+can still override it for a one-off setup.
 
 ## Dropped — macOS only
 

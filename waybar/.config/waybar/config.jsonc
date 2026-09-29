@@ -44,15 +44,12 @@
       "8": "8",
       "9": "9",
       "10": "0"
-    },
-    // Keyed by OUTPUT, not by workspace. The hyprland module takes
-    // output -> count ({"*": 5}) or output -> workspace ids ({"*": [1,2]}).
-    // The workspace -> outputs form ({"1": [], ...}) is the sway module's
-    // shape; using it here silently renders no persistent workspaces.
-    // "*" covers any monitor, so this survives attaching an external display.
-    "persistent-workspaces": {
-      "*": [1, 2, 5, 6, 7, 8]
     }
+    // No "persistent-workspaces" here: Hyprland's workspace rules
+    // (hyprland.lua) already mark 1 2 5 6 7 8 10 persistent AND bind each to
+    // a screen, and each bar shows only its own screen's workspaces. The old
+    // {"*": [...]} form forced all of them onto every bar, which with three
+    // screens put the HP's and laptop's numbers on the ASUS bar too.
   },
 
   // Shows "resize" / "service" when a submap is active, so the modes from

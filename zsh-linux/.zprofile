@@ -1,6 +1,9 @@
-# ─── PATH ─────────────────────────────────────────────────────────────────────
-# ~/.local/bin moved to ~/.zshenv. It was here, login-shell-only, which meant a
-# terminal under a Wayland session (Hyprland) never got it: GDM sources
-# ~/.profile for X11 sessions but exec's Wayland sessions directly. The .zshenv
-# version is guarded, so the original concern -- zellij panes re-prepending on
-# every new pane -- cannot happen there either.
+# ─── PATH, again ──────────────────────────────────────────────────────────────
+# Login shells only (ssh, a TTY console, `su -`, `zsh -l`). Debian's
+# /etc/zsh/zprofile runs /etc/profile, which ASSIGNS PATH from scratch - after
+# ~/.zshenv has already added ~/.local/bin and the mise shims. Without this,
+# a login shell loses mise, starship, atuin, carapace and the bat/fd shims.
+# .zshenv's PATH blocks are guarded, so re-running it only re-adds what
+# /etc/profile removed.
+
+source ~/.zshenv

@@ -85,6 +85,7 @@ brew "xh"
 brew "yt-dlp"
 # Pluggable terminal workspace, with terminal multiplexer as the base feature
 brew "zellij"
+brew "zoxide"
 # Secure dotenv–from the creator of `dotenv`
 brew "dotenvx/brew/dotenvx", trusted: true
 # AeroSpace is an i3-like tiling window manager for macOS

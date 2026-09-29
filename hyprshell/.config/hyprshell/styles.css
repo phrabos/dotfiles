@@ -25,8 +25,8 @@
 
     --text-color: rgba(205, 214, 244, 1);     /* text */
 
-    /* Hyprland: rounding 8, border_size 2. */
-    --border-radius: 8px;
+    /* Hyprland: rounding 12, border_size 2. */
+    --border-radius: 12px;
     --border-size: 2px;
     --border-style: solid;
 

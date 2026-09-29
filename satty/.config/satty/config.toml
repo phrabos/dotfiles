@@ -1,0 +1,46 @@
+# satty - screenshot annotation (SUPER+SHIFT+A via screenshot-wl -a).
+# Installed through mise (github:gabm/Satty in mise/.config/mise/config.toml);
+# keys from the README at the installed tag, v0.22.0.
+#
+# Replaces swappy. Same save folder and naming as screenshot-wl, so annotated
+# shots land beside the plain ones.
+
+[general]
+# Open as a floating window sized to the capture rather than tiled.
+floating-hack = true
+resize = { mode = "smart" }
+no-window-decoration = true
+
+# Enter: copy, save and close in one key - the common case. Escape just
+# closes. The toolbar's copy/save buttons still work on their own and leave
+# the editor open, for copy-then-keep-editing.
+actions-on-enter = ["save-to-clipboard", "save-to-file", "exit"]
+actions-on-escape = ["exit"]
+copy-command = "wl-copy"
+output-filename = "~/Pictures/sh/Screenshot_%Y-%m-%d_%H_%M_%S-annotated.png"
+
+# Arrow first: pointing at something is what most annotations are.
+initial-tool = "arrow"
+# Rectangles match the desktop's rounding (hyprland decoration.rounding).
+corner-roundness = 12
+default-round-caps = true
+# Removes the jitter in freehand strokes.
+brush-smooth-history-size = 5
+notification-thumbnail = "screenshot"
+
+[font]
+family = "IosevkaTerm Nerd Font Propo"
+style = "Regular"
+
+# Catppuccin Mocha. Mauve first as the desktop accent, then the colours that
+# read clearly on screenshots of both dark and light apps.
+[color-palette]
+palette = [
+    "#cba6f7ff", # mauve
+    "#f38ba8ff", # red
+    "#fab387ff", # peach
+    "#f9e2afff", # yellow
+    "#a6e3a1ff", # green
+    "#89b4faff", # blue
+    "#1e1e2eff", # base
+]

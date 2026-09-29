@@ -37,7 +37,7 @@ git clone git@github.com:phrabos/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
 brew bundle --file=./Brewfile     # 3 taps, 43 formulae, 26 casks
-stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|swaync|swayosd|swappy|qt|gtk|system)/')
+stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|swaync|swayosd|satty|qt|gtk|system)/')
 
 # Third-party taps require explicit trust before Homebrew will load them
 brew trust --cask nikitabobko/tap/aerospace
@@ -77,7 +77,7 @@ vendor repo or release binary.
 
 Debian renames two binaries to avoid clashes with unrelated packages. The
 configs here call them by their upstream names, so `~/.local/bin` carries
-shims (this is why `.zprofile` puts it ahead of `/usr/bin`):
+shims (this is why `.zshenv` puts it ahead of `/usr/bin`):
 
 ```bash
 ln -sf "$(command -v batcat)" ~/.local/bin/bat
@@ -99,7 +99,7 @@ stow -R <package>   # restow, after renaming files
 stow -n -v <pkg>    # dry run, shows every link without making one
 
 # link all — note the platform exclusion, see "Platform split" above
-stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|swaync|swayosd|swappy|qt|gtk|system)/')    # macOS
+stow $(ls -d */ | grep -vE '^(zsh-linux|hypr|waybar|swaync|swayosd|satty|qt|gtk|system)/')    # macOS
 stow $(ls -d */ | grep -vE '^(zsh-macos|aerospace|system)/')           # Linux
 ```
 
@@ -126,7 +126,7 @@ into the matching package here first, then stow.
 | `gtk` | `.config/gtk-3.0/`, `.config/gtk-4.0/` (Linux only) |
 | `qt` | `.config/qt6ct/` - Catppuccin palette for Qt 6 apps (Linux only) |
 | `swayosd` | `.config/swayosd/` - volume / brightness popup (Linux only) |
-| `swappy` | `.config/swappy/config` - screenshot annotation (Linux only) |
+| `satty` | `.config/satty/config.toml` - screenshot annotation; binary from mise (Linux only) |
 | `nvim` | `.config/nvim/` (LazyVim) |
 | `zellij` | `.config/zellij/` |
 | `ghostty` | `.config/ghostty/` |

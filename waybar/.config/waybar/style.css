@@ -35,7 +35,7 @@
 tooltip {
   background: alpha(@base, 0.95);
   border: 2px solid @mauve;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 tooltip label {
   color: @text;
@@ -57,7 +57,7 @@ window#waybar {
   margin: 0 2px;
   color: @overlay0;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 #workspaces button.active {
@@ -80,7 +80,7 @@ window#waybar {
   background: @peach;
   padding: 0 10px;
   margin: 4px 2px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 #custom-ipswitch,
@@ -96,7 +96,7 @@ window#waybar {
   padding: 0 10px;
   margin: 4px 2px;
   background: @surface0;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 /* Icon-only chips: a touch more icon, so each pill reads as a button. */

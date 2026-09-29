@@ -56,12 +56,14 @@ fi
 
 case "$clip" in
 -a | --annotate)
-    # Hand the capture to swappy for cropping/markup. swappy does its own
-    # save and clipboard actions from there, so this path does neither.
+    # Hand the capture to satty for cropping/markup. satty does its own
+    # save and clipboard actions from there (Enter does both, see
+    # ~/.config/satty/config.toml), so this path does neither. satty comes
+    # from mise; hyprland.lua puts its shims on the session PATH.
     if [ -n "$geo" ]; then
-        grim -g "$geo" - | swappy -f -
+        grim -g "$geo" - | satty -f -
     else
-        grim - | swappy -f -
+        grim - | satty -f -
     fi
     play_sound
     ;;

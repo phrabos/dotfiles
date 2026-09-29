@@ -14,7 +14,7 @@ esac
 unset MISE_SHIMS
 
 # ─── ~/.local/bin ─────────────────────────────────────────────────────────────
-# Release binaries (starship, atuin, zellij, mise, uv, carapace, wt) and the
+# The self-updating installers (mise, uv), local scripts, and the
 # Debian name shims (bat -> batcat, fd -> fdfind) live here, so it must come
 # before /usr/bin.
 #

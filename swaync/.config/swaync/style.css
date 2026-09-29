@@ -51,7 +51,7 @@
   --text-color-disabled: var(--overlay0);
   --bg-selected: var(--mauve);
 
-  --border-radius: 8px; /* hyprland decoration.rounding */
+  --border-radius: 12px; /* hyprland decoration.rounding */
   --border: 2px solid var(--noti-border-color); /* hyprland border_size */
   --notification-shadow: 0 2px 8px rgba(17, 17, 27, 0.5);
 
@@ -127,7 +127,7 @@
 
 .notification-row .notification-background .notification .notification-default-action .notification-content .image {
   /* upstream crops images into circles; app icons read better as-is */
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .close-button {
@@ -144,7 +144,7 @@
   color: var(--text);
   border: none;
   box-shadow: none;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .notification-row .notification-background .notification .notification-action > button:hover {
@@ -233,7 +233,7 @@
 .notification-group .notification-group-buttons button {
   background: var(--surface0);
   color: var(--text);
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .notification-group .notification-group-buttons button:hover {
@@ -260,7 +260,7 @@ scrollbar slider {
   color: var(--text);
   border: none;
   box-shadow: none;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 4px 12px;
 }
 

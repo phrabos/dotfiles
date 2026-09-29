@@ -5,5 +5,28 @@ idiomatic_version_file_enable_tools = ["node"]
 corepack = true
 
 [tools]
+# Linux only: screenshot annotation behind screenshot-wl -a (SUPER+SHIFT+A).
+# Not in the Kali repos; this tracks its GitHub releases. No macOS build.
+"github:gabm/Satty" = { version = "latest", os = ["linux"] }
 node = "24"
+
+# ─── Linux-only CLI tools ─────────────────────────────────────────────────────
+# Homebrew installs these on macOS (Brewfile); here mise tracks their GitHub
+# releases so `mise upgrade` updates them all. os = ["linux"] keeps a mise
+# install on the Mac from duplicating the brew copies.
+atuin     = { version = "latest", os = ["linux"] }
+carapace  = { version = "latest", os = ["linux"] }
+starship  = { version = "latest", os = ["linux"] }
+worktrunk = { version = "latest", os = ["linux"] } # the `wt` binary
+pulumi    = { version = "latest", os = ["linux"] }
+zoxide    = { version = "latest", os = ["linux"] } # smarter cd (z / zi)
+dotenvx   = { version = "latest", os = ["linux"] }
+firebase  = { version = "latest", os = ["linux"] } # standalone firebase-tools binary
+"npm:@fission-ai/openspec"  = { version = "latest", os = ["linux"] }
+"github:mongodb-js/mongosh" = { version = "latest", os = ["linux"] }
+# Pinned: a zellij client only attaches to a server of the same version, so a
+# bump strands every running session. Raise it after closing them all.
+zellij    = { version = "0.45.0", os = ["linux"] }
+# Cmd+Tab-style window switcher (hyprland.lua autostarts `hyprshell run`).
+"github:H3rmt/hyprshell"    = { version = "latest", os = ["linux"] }
 "npm:@microsoft/inshellisense" = "latest"

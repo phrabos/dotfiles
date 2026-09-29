@@ -68,12 +68,76 @@ local function load_nwg_monitors()
     return applied
 end
 
-if not load_nwg_monitors() then
-    -- Fallback until nwg-displays has been run once: the single laptop panel,
-    -- plus a catch-all so any external display still lights up.
-    hl.monitor({ output = "eDP-1", mode = "1920x1080@60", position = "0x0", scale = 1 })
-    hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
+-- The desk: two rows. ASUS 4K is the main screen, top middle; the HP stands
+-- in portrait to its right, bottom edges aligned; the laptop sits centred
+-- below the ASUS. Positions are in logical (scaled, rotated) pixels:
+--
+--              x=0          3072  4152
+--   y=0                      +----+
+--   y=192     +-------------+|    |
+--             |    ASUS     || HP |  ASUS 3840x2160 @1.25 -> 3072x1728
+--             | 3072 x 1728 ||1080|  HP   1920x1080 rotated -> 1080x1920
+--   y=1920    +--+-------+--++----+
+--                | laptop|           laptop 1920x1080 at x=576 (centred)
+--   y=3000       +-------+
+--
+-- 1.25 rather than the 1.5 Hyprland picks for a 28" 4K: 1.5 read too large.
+-- A scale must divide the mode into whole pixels; 1.25 does (3072x1728).
+-- Shifted down 192 so no coordinate is negative (XWayland apps such as Burp
+-- mis-place menus on negative outputs). External screens are matched by
+-- description, not port, so they keep their place whichever port or dock
+-- they come in on; desc: is a prefix match, so serials stay out of the repo.
+local monitors = {
+    asus   = "desc:ASUSTek COMPUTER INC ASUS VG289Q1A",
+    hp     = "desc:HP Inc. HP VH240a",
+    laptop = "eDP-1",
+}
+
+hl.monitor({ output = monitors.asus, mode = "preferred", position = "0x192",  scale = 1.25 })
+-- transform 1 = 90 degrees counter-clockwise (wl_output's direction), for
+-- the HP's portrait mount. 3 is the other way round.
+hl.monitor({ output = monitors.hp,   mode = "preferred", position = "3072x0", scale = 1, transform = 1 })
+
+-- Lid: while external screens are attached, logind ignores the lid
+-- (HandleLidSwitchDocked=ignore, system/), so Hyprland handles it - closing
+-- it switches the panel off and its workspaces move to the external screens.
+-- The config decides at load time, from the lid's real state; the lid binds
+-- (under KEYBINDINGS) just reload it. A reload is the only way back on - a
+-- runtime hl.monitor() enabling a disabled output does nothing on 0.56.2,
+-- while disabling one works. One code path for both directions.
+local function lid_closed()
+    local fh = io.open("/proc/acpi/button/lid/LID/state", "r")
+    if not fh then return false end
+    local state = fh:read("*a") or ""
+    fh:close()
+    return state:find("closed", 1, true) ~= nil
 end
+
+local function laptop_panel(on)
+    if on then
+        hl.monitor({ output = monitors.laptop, mode = "1920x1080@60", position = "576x1920", scale = 1 })
+    else
+        hl.monitor({ output = monitors.laptop, disabled = true })
+    end
+end
+
+local function external_count()
+    local n = 0
+    for _, m in ipairs(hl.get_monitors()) do
+        if m.name ~= monitors.laptop then n = n + 1 end
+    end
+    return n
+end
+
+laptop_panel(not (lid_closed() and external_count() > 0))
+
+-- Anything else (a projector, a hotel TV) lights up to the right at its
+-- preferred mode.
+hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
+
+-- Applied last so a monitors.conf written by nwg-displays can still
+-- override the above for a one-off setup. It names ports, not descriptions.
+load_nwg_monitors()
 
 -------------------------------
 ---- ENVIRONMENT VARIABLES ----
@@ -84,10 +148,20 @@ end
 -- get it from ~/.zshenv; these never read a shell rc at all. GDM sources
 -- ~/.profile for X11 sessions but exec's Wayland sessions directly, so the
 -- session PATH arrives here without it.
+--
+-- mise's shims directory goes on too, for the same reason: tools installed
+-- through mise (satty, behind screenshot-wl -a) are otherwise invisible to
+-- keybinds. Same order as ~/.zshenv: ~/.local/bin ahead of the shims. Each
+-- dir is prepended in turn, so the one listed last ends up first.
 local _home = os.getenv("HOME")
 local _path = os.getenv("PATH") or ""
-if _home and not _path:find(_home .. "/.local/bin", 1, true) then
-    hl.env("PATH", _home .. "/.local/bin:" .. _path)
+if _home then
+    for _, dir in ipairs({ _home .. "/.local/share/mise/shims", _home .. "/.local/bin" }) do
+        if not (":" .. _path .. ":"):find(":" .. dir .. ":", 1, true) then
+            _path = dir .. ":" .. _path
+        end
+    end
+    hl.env("PATH", _path)
 end
 
 -- Cursor: Catppuccin Mocha, mauve accent, to match everything else rather than
@@ -199,7 +273,14 @@ hl.config({
     },
 
     decoration = {
-        rounding = 8,
+        -- 12, up from 8, so the squircle curve below has room to show; at
+        -- 8 it was indistinguishable from a plain arc.
+        rounding = 12,
+        -- Squircle corners: the corner curve is a superellipse with this
+        -- exponent. 2.0 (the default) is a circular arc; higher values
+        -- square it off with a smoother start into the straight edge.
+        -- 2.5 as in end-4's dots.
+        rounding_power = 2.5,
 
         -- Dim unfocused windows so the focused one stands out alongside its
         -- gradient border. 0.15, not the default 0.5, which reads as
@@ -221,6 +302,20 @@ hl.config({
             range   = 12,
             color   = 0xaa11111b, -- crust
         },
+
+        -- Glow (new in 0.56): a soft halo on the focused window only, in the
+        -- border's mauve -> pink pair so the accent carries past the 2px
+        -- line. range 15 with render_power 2 (slower falloff) so the halo
+        -- reaches visibly past the shadow; 0x99 alpha keeps it light, not a
+        -- second border. color_inactive defaults to opaque white, so it is
+        -- zeroed out.
+        glow = {
+            enabled        = true,
+            range          = 15,
+            render_power   = 2,
+            color          = { colors = { "rgba(cba6f799)", "rgba(f5c2e799)" }, angle = 45 }, -- mauve, pink
+            color_inactive = "rgba(00000000)",
+        },
     },
 
     -- Tabbed groups (ALT+A). Hyprland's defaults are translucent yellow
@@ -240,7 +335,7 @@ hl.config({
             font_size            = 11,
             height               = 18,
             gradients            = true,
-            rounding             = 6,
+            rounding             = 8,
             indicator_height     = 0,
             text_color           = "rgba(1e1e2eff)", -- base, on the mauve tab
             text_color_inactive  = "rgba(cdd6f4ff)", -- text
@@ -326,6 +421,9 @@ hl.animation({ leaf = "border",      enabled = true, speed = 5, bezier = "ease" 
 
 -- Workspaces slide with a fade, over 15% of the screen rather than all of it.
 hl.animation({ leaf = "workspaces",  enabled = true, speed = 4, bezier = "smooth", style = "slidefade 15%" })
+-- Special workspaces (the SUPER+5 Obsidian dropdown) slide down over the
+-- current workspace instead of sideways like a workspace switch.
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4, bezier = "smooth", style = "slidevert" })
 
 ---------------------
 ---- KEYBINDINGS ----
@@ -389,11 +487,22 @@ bind(mainMod .. " + SHIFT + Q", "Close window (launchers: Esc)", hl.dsp.window.c
 -- SwitchToMode Move). ALT+SHIFT+7 from the loop below still sends a window
 -- there.
 
+-- Defined with the Obsidian dropdown further down; ALT+5 calls it first so
+-- workspace 5 never comes up empty while Obsidian is borrowed.
+local notes_send_home
+
 -- Workspaces. The nine near-identical bind pairs from .aerospace.toml collapse
 -- into a loop - one of the reasons the Lua config is worth the migration.
 for i = 1, 10 do
     local key = i % 10 -- workspace 10 sits on the "0" key, as AeroSpace's 0
-    bind(mainMod .. " + " .. key,         "Go to workspace " .. i,        hl.dsp.focus({ workspace = i }))
+    if i == 5 then
+        bind(mainMod .. " + 5", "Go to workspace 5 (brings Obsidian back from the dropdown)", function()
+            notes_send_home()
+            hl.dispatch(hl.dsp.focus({ workspace = 5 }))
+        end)
+    else
+        bind(mainMod .. " + " .. key,     "Go to workspace " .. i,        hl.dsp.focus({ workspace = i }))
+    end
     bind(mainMod .. " + SHIFT + " .. key, "Move window to workspace " .. i, hl.dsp.window.move({ workspace = i }))
 end
 
@@ -467,6 +576,19 @@ bind("SUPER + L", "Lock screen", hl.dsp.exec_cmd("loginctl lock-session"))
 -- is the firmware's and powers on as usual; holding it still forces off.
 bind("CTRL + ALT + Delete", "Power menu", hl.dsp.exec_cmd("power-menu"))
 bind("XF86PowerOff",        "Power menu", hl.dsp.exec_cmd("power-menu"))
+
+-- Lid, while external screens are attached (see MONITORS): closed switches
+-- the laptop panel off, and Hyprland moves its workspaces (10, Keymapp) to
+-- an external screen; open brings the panel back and rehome_workspaces()
+-- returns them. With no external screen the lid is left to logind (suspend
+-- on battery, nothing on AC). locked = works on the lock screen too.
+-- Both reload; MONITORS reads the lid state. Deferred a moment so the
+-- /proc lid state has caught up with the switch event.
+local function reload_for_lid()
+    hl.timer(function() hl.dispatch(hl.dsp.reload_config()) end, { timeout = 300, type = "oneshot" })
+end
+bind("switch:on:Lid Switch",  "Lid closed: laptop panel off (docked only)", reload_for_lid, { locked = true })
+bind("switch:off:Lid Switch", "Lid opened: laptop panel on",                reload_for_lid, { locked = true })
 
 -- xkill equivalent: the next window you click is killed; Escape backs out. For
 -- a hung window that ignores ALT+SHIFT+Q (a polite close request). Killing
@@ -549,6 +671,16 @@ bind("SUPER + K", "Keybinding cheat sheet", hl.dsp.exec_cmd("hypr-keybinds"))
 -- and multiplies with Ghostty's own background-opacity. Per window; state is
 -- forgotten when the window closes or the config reloads.
 local translucent_opacity = "0.75"
+
+-- set_prop "opacity" is the FOCUSED opacity only; unfocused and fullscreen
+-- are their own props. Setting just the one left a toggled window translucent
+-- only while focused (and a solid-toggled browser translucent again on focus
+-- loss). A window rule's single value covers all three, so this does too.
+local function set_window_opacity(sel, value)
+    for _, prop in ipairs({ "opacity", "opacity_inactive", "opacity_fullscreen" }) do
+        hl.dispatch(hl.dsp.window.set_prop({ window = sel, prop = prop, value = value }))
+    end
+end
 -- Classes that open translucent (the browsers-ws2, obsidian-ws5 and
 -- discord-ws8 window rules below apply translucent_opacity to them), so the
 -- first press makes them solid.
@@ -573,11 +705,86 @@ bind("SUPER + BackSpace", "Toggle transparency (focused window)", function()
     end
     local on = not current
     translucent_windows[window.address] = on
-    hl.dispatch(hl.dsp.window.set_prop({
-        window = "address:" .. window.address,
-        prop   = "opacity",
-        value  = on and translucent_opacity or "1",
-    }))
+    set_window_opacity("address:" .. window.address, on and translucent_opacity or "1")
+end)
+
+-- Obsidian dropdown. Obsidian lives tiled on workspace 5; SUPER+5 borrows its
+-- one window into the "notes" special workspace (a scratchpad) as a floating
+-- panel docked on the right, over whatever workspace is showing. Pressing it
+-- again sends the window home to 5, tiled again. One window, so there is no
+-- second copy to keep in sync. Solid while dropped down so the page behind
+-- doesn't show through the note; its SUPER+Backspace state returns with it.
+local notes_special = "notes"
+local notes_width   = 0.45 -- share of the monitor width
+local obsidian_classes = { ["md.obsidian.Obsidian"] = true, ["obsidian"] = true }
+local notes_pending = false -- SUPER+5 launched Obsidian; drop it down on open
+
+local function find_obsidian()
+    for _, w in ipairs(hl.get_windows()) do
+        if obsidian_classes[w.class] then return w end
+    end
+end
+
+local function is_dropped(w)
+    return w.workspace ~= nil and w.workspace.name == "special:" .. notes_special
+end
+
+local function drop_down(w)
+    local sel = "address:" .. w.address
+    local mon = hl.get_active_monitor()
+    -- The panel's inner edge sits where a tiled window's would: inside the
+    -- outer gap, the border and waybar's reserved strip. In Lua reserved is
+    -- keyed ({ top = 30.0, ... }), not the list hyprctl monitors prints.
+    local inset = 8 + 2 -- gaps_out + border_size
+    local r = mon.reserved or {}
+    local top, bottom = math.floor(r.top or 0), math.floor(r.bottom or 0)
+    local w_px = math.floor(mon.width * notes_width)
+    local h_px = mon.height - top - bottom - 2 * inset
+    hl.dispatch(hl.dsp.window.move({ window = sel, workspace = "special:" .. notes_special, follow = false }))
+    hl.dispatch(hl.dsp.window.float({ window = sel, action = "enable" }))
+    hl.dispatch(hl.dsp.window.resize({ window = sel, x = w_px, y = h_px }))
+    hl.dispatch(hl.dsp.window.move({ window = sel, x = mon.x + mon.width - inset - w_px, y = mon.y + top + inset }))
+    set_window_opacity(sel, "1")
+    hl.dispatch(hl.dsp.workspace.toggle_special(notes_special))
+    hl.dispatch(hl.dsp.focus({ window = sel }))
+end
+
+notes_send_home = function()
+    local w = find_obsidian()
+    if not (w and is_dropped(w)) then return end
+    local sel = "address:" .. w.address
+    -- Hide the scratchpad first (it slides back up with the window in it).
+    -- Moving the window out of a visible special workspace leaves it open
+    -- and empty over the current workspace - close_special_on_empty does
+    -- not fire for a silent move on 0.56.2.
+    local special = hl.get_active_special_workspace()
+    if special and special.name == "special:" .. notes_special then
+        hl.dispatch(hl.dsp.workspace.toggle_special(notes_special))
+    end
+    hl.dispatch(hl.dsp.window.move({ window = sel, workspace = 5, follow = false }))
+    hl.dispatch(hl.dsp.window.float({ window = sel, action = "disable" }))
+    local translucent = translucent_windows[w.address]
+    if translucent == nil then translucent = translucent_by_default[w.class] == true end
+    set_window_opacity(sel, translucent and translucent_opacity or "1")
+end
+
+bind("SUPER + 5", "Obsidian dropdown (docked right; again to send it home to 5)", function()
+    local w = find_obsidian()
+    if not w then
+        notes_pending = true
+        hl.exec_cmd("obsidian")
+    elseif is_dropped(w) then
+        notes_send_home()
+    else
+        drop_down(w)
+    end
+end)
+
+hl.on("window.open", function(w)
+    if notes_pending and w and obsidian_classes[w.class] then
+        notes_pending = false
+        drop_down(w)
+    end
 end)
 
 ----------------------------------------
@@ -708,9 +915,69 @@ end)
 -- draws them; they must exist compositor-side too.
 --   1 terminal · 2 browsers · 5 Obsidian · 6 security tooling · 7 blackhole
 --   8 chat (Discord)
-for _, ws in ipairs({ "1", "2", "5", "6", "7", "8" }) do
-    hl.workspace_rule({ workspace = ws, persistent = true })
+--
+-- Each workspace also has a home screen (see MONITORS for the desk). The ASUS
+-- is the work screen - terminals, browsers, security tooling and anything
+-- unassigned; the HP holds notes and chat beside it; the laptop holds
+-- Keymapp's layer map. Apps follow their workspace (window rules below).
+-- default = the workspace a screen shows when it first lights up.
+-- 10 is persistent too so the laptop's bar always has its "0".
+local workspace_homes = {
+    { ws = "1",  on = monitors.asus,   persistent = true, default = true }, -- terminal
+    { ws = "2",  on = monitors.asus,   persistent = true },                 -- browsers
+    { ws = "3",  on = monitors.asus },
+    { ws = "4",  on = monitors.asus },
+    { ws = "6",  on = monitors.asus,   persistent = true },                 -- Burp, Wireshark
+    { ws = "7",  on = monitors.asus,   persistent = true },                 -- blackhole
+    { ws = "9",  on = monitors.asus },
+    { ws = "5",  on = monitors.hp,     persistent = true, default = true }, -- Obsidian
+    { ws = "8",  on = monitors.hp,     persistent = true },                 -- Discord
+    { ws = "10", on = monitors.laptop, persistent = true, default = true }, -- Keymapp
+}
+for _, h in ipairs(workspace_homes) do
+    hl.workspace_rule({ workspace = h.ws, monitor = h.on, persistent = h.persistent, default = h.default })
 end
+
+-- The rules above only place a workspace when it is created. On unplug,
+-- Hyprland itself moves a screen's workspaces to one still connected. On
+-- plug-in it only returns those that left the same PORT, and never ones
+-- first opened while the screen was away (Ghostty started on the laptop,
+-- then the ASUS arrives). So when a screen appears, pull every workspace
+-- whose home it is back onto it.
+local function monitor_is(m, selector)
+    if selector:sub(1, 5) == "desc:" then
+        local want = selector:sub(6)
+        return (m.description or ""):sub(1, #want) == want
+    end
+    return m.name == selector
+end
+
+local function rehome_workspaces()
+    for _, m in ipairs(hl.get_monitors()) do
+        for _, h in ipairs(workspace_homes) do
+            local ws = hl.get_workspace(h.ws)
+            if ws and monitor_is(m, h.on) and not (ws.monitor and ws.monitor.name == m.name) then
+                hl.dispatch(hl.dsp.workspace.move({ workspace = h.ws, monitor = m.name }))
+            end
+        end
+    end
+end
+
+-- Deferred: monitor.added fires before the new output has finished setting
+-- up (and before Hyprland's own returning-workspace pass), and a reload
+-- applies monitor rules at the end of the config run.
+local function rehome_soon()
+    hl.timer(rehome_workspaces, { timeout = 500, type = "oneshot" })
+end
+hl.on("monitor.added", rehome_soon)
+hl.on("config.reloaded", rehome_soon)
+
+-- Unplugging the last external screen while the lid is shut (on AC, where
+-- logind ignores the lid) would leave nothing lit: reload, and with no
+-- external screen left the config lights the panel whatever the lid says.
+hl.on("monitor.removed", function()
+    if external_count() == 0 then hl.dispatch(hl.dsp.reload_config()) end
+end)
 
 --------------------------------
 ---- WINDOWS AND WORKSPACES ----
